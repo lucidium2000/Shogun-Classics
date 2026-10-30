@@ -286,7 +286,7 @@ footer a { color: var(--ink); }
     if (e.ctrlKey || e.metaKey || e.shiftKey || e.button > 0) return;
     e.preventDefault();
     if (document.body.classList.contains('going')) return;
-    pick(games.indexOf(g)); confirm(); g.classList.add('chosen'); document.body.classList.add('going');
+    pick(games.indexOf(g)); confirm(g.dataset.g); g.classList.add('chosen'); document.body.classList.add('going');
     goFull();
     setTimeout(() => openGame(g), 520);
   }));
@@ -387,7 +387,38 @@ footer a { color: var(--ink); }
     s.buffer = buf; s.connect(f); f.connect(g); g.connect(bus || ac.destination); s.start(ac.currentTime + at);
   }
   blip = () => { tone(660, 990, 0, 0.06, 'square', 0.12); };
-  confirm = () => {
+  // each game announces itself when it's picked
+  function playQB(str) {                  // QBasic PLAY on a PC-speaker square wave, same maths as the 1996 port
+    let T = 120, L = 4, O = 4, at = 0;
+    const re = /([TLO])(\d+)|([A-G])([#+-]?)(\d*)(\.*)/g; let m;
+    while ((m = re.exec(str.toUpperCase()))) {
+      if (m[1]) { const v = +m[2]; if (m[1] === 'T') T = v; else if (m[1] === 'L') L = v; else O = v; continue; }
+      const semi = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 }[m[3]] + (m[4] === '-' ? -1 : m[4] ? 1 : 0);
+      const sec = 240 / T / (+m[5] || L) * Math.pow(1.5, m[6].length), f = 440 * Math.pow(2, (O * 12 + semi + 1 - 46) / 12);
+      tone(f, f, at, sec * 7 / 8, 'square', 0.16); at += sec;
+    }
+  }
+  let cheers = null;
+  function say(text, rate, pitch) {       // the Remake's announcer: the browser's voice, set up the same way
+    if (!window.speechSynthesis) return;
+    try {
+      speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(text), en = speechSynthesis.getVoices().filter(v => /^en/i.test(v.lang));
+      const v = en.find(v => /male|daniel|fred|alex|george|david|guy|ryan/i.test(v.name) && !/female/i.test(v.name)) || en[0];
+      if (v) u.voice = v; u.rate = rate; u.pitch = pitch; speechSynthesis.speak(u);
+    } catch (e) {}
+  }
+  const PICK = {
+    '1996': () => { playQB('T250 O0E O0G O0E- O0E O0G- O0G'); setTimeout(() => playQB('T250 O1E- O1E- O1E O1E O1E- O1E- O1E O1E'), 1440); },   // Wan'fu's entrance, the first fight
+    remastered: () => { say('Fight', 1, 0.3); tone(90, 40, 0, 0.6, 'sine', 0.7); noise(0, 0.3, 0.3); },
+    ii: () => {
+      const ac = audio(); if (!ac) return;
+      if (cheers) { const s = ac.createBufferSource(), g = ac.createGain(); g.gain.value = 1.4; s.buffer = cheers; s.connect(g); g.connect(ac.destination); s.start(); }
+    },
+  };
+  fetch('sounds/corbin-double.mp3').then(r => r.ok ? r.arrayBuffer() : null).then(b => { const ac = audio(); return b && ac && ac.decodeAudioData(b); }).then(buf => { if (buf) cheers = buf; }).catch(() => {});
+  confirm = which => {
+    if (PICK[which]) { noise(0, 0.12, 0.2); PICK[which](); return; }
     [523, 659, 784, 1047].forEach((f, i) => tone(f, f * 1.01, i * 0.055, 0.09, 'square', 0.14));
     tone(1568, 2093, 0.22, 0.22, 'square', 0.13);
     tone(110, 55, 0, 0.28, 'triangle', 0.4);
