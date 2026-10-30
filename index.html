@@ -119,7 +119,79 @@ footer a { color: var(--ink); }
   .game.sel .play::before, .game:hover .play::before, .game.chosen, .game.chosen .play::before, .game.sel, .game.sel .cover { animation: none; }
   .game:hover, .game:focus-visible, .game.sel { transform: none; }
 }
+/* 30th anniversary intro: plays over the menu on arrival, any tap or key skips it */
+.intro { position: fixed; inset: 0; z-index: 40; overflow: hidden; background: #000; display: grid; place-items: center; cursor: pointer;
+  padding: 24px max(16px, env(safe-area-inset-right, 0px)) 24px max(16px, env(safe-area-inset-left, 0px)); }
+.intro::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: repeating-linear-gradient(0deg, rgba(0,0,0,.28) 0 1px, transparent 1px 3px); }
+.intro canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.intro .rays { position: absolute; left: 50%; top: 50%; width: 220vmax; height: 220vmax; margin: -110vmax 0 0 -110vmax; opacity: 0;
+  background: repeating-conic-gradient(from 0deg, rgba(232, 180, 70, .16) 0deg 7deg, transparent 7deg 18deg);
+  -webkit-mask: radial-gradient(circle, #000 0, transparent 46%); mask: radial-gradient(circle, #000 0, transparent 46%);
+  animation: raysIn .8s ease-out 3.1s forwards, spin 40s linear infinite; }
+.intro .core { position: relative; display: grid; justify-items: center; text-align: center; gap: 4px; }
+.intro .pre { font-family: var(--pixel); font-size: clamp(18px, 3.4vw, 26px); letter-spacing: .4em; padding-left: .4em; color: var(--muted);
+  opacity: 0; animation: fadeUp .6s ease-out .2s forwards, fadeOut .4s ease-in 2.7s forwards; }
+.intro .count { font-family: var(--pixel); font-size: clamp(90px, 22vw, 200px); line-height: .9; color: var(--red); letter-spacing: .04em;
+  font-variant-numeric: tabular-nums; text-shadow: 0 0 30px rgba(200, 40, 30, .6); opacity: 0;
+  animation: fadeUp .4s ease-out .9s forwards, countOut .35s ease-in 2.95s forwards; }
+.intro .big { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -62%); display: grid; justify-items: center; gap: 0; width: max-content; max-width: 92vw; }
+.intro .thirty { position: relative; font-family: var(--display); font-weight: 800; font-size: clamp(150px, 36vw, 330px); line-height: .82;
+  background: linear-gradient(180deg, #fff6d8 0%, #f3c552 38%, #b0711c 62%, #f7d77a 80%, #8a5212 100%); -webkit-background-clip: text; background-clip: text; color: transparent;
+  filter: drop-shadow(0 4px 0 #6d140f) drop-shadow(0 0 34px rgba(243, 197, 82, .45)); opacity: 0; transform: scale(3);
+  animation: slam .45s cubic-bezier(.2, .9, .3, 1.2) 3.05s forwards; }
+.intro .thirty::after { content: ""; position: absolute; inset: 0; background: linear-gradient(105deg, transparent 35%, rgba(255,255,255,.85) 50%, transparent 65%) -200% 0 / 200% 100% no-repeat;
+  -webkit-background-clip: text; background-clip: text; color: transparent; animation: shine 2.6s ease-in-out 3.7s infinite; }
+.intro .thirty .th { display: inline-block; vertical-align: top; margin: .1em 0 0 .04em; font-size: .27em; line-height: 1; letter-spacing: .02em; }
+.intro .ribbon { margin-top: 6px; font-family: var(--body); font-weight: 700; font-size: clamp(22px, 5vw, 42px); letter-spacing: .32em; padding: 4px .2em 4px .52em;
+  color: #fff; background: var(--red); box-shadow: 0 0 0 2px #f3c552, 0 10px 30px rgba(0,0,0,.6); white-space: nowrap;
+  clip-path: inset(0 50% 0 50%); animation: ribbon .45s ease-out 3.55s forwards; }
+.intro .years { margin-top: 12px; font-family: var(--pixel); font-size: clamp(22px, 4.4vw, 34px); letter-spacing: .5em; padding-left: .5em; color: #f3c552;
+  opacity: 0; animation: fadeUp .5s ease-out 4.1s forwards; }
+.intro .line { margin-top: 8px; font-family: var(--display); font-weight: 800; font-size: clamp(26px, 6vw, 54px); letter-spacing: .14em; padding-left: .14em; color: var(--ink);
+  text-shadow: 0 3px 0 var(--red); opacity: 0; animation: fadeUp .6s ease-out 4.6s forwards; }
+.intro .start { position: absolute; left: 0; right: 0; bottom: calc(8vh + env(safe-area-inset-bottom, 0px)); font-family: var(--pixel); font-size: clamp(24px, 4.6vw, 34px);
+  letter-spacing: .3em; padding-left: .3em; color: #fff; text-align: center; opacity: 0; animation: fadeUp .4s ease-out 5.4s forwards; }
+.intro .start span { animation: blink 1s steps(2) 5.8s infinite; }
+.intro .skip { position: absolute; right: max(14px, env(safe-area-inset-right, 0px)); bottom: calc(12px + env(safe-area-inset-bottom, 0px)); font-family: var(--pixel); font-size: 17px;
+  letter-spacing: .14em; color: var(--muted); animation: fadeOut .3s 5.4s forwards; }
+.intro .flash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; animation: flash .6s ease-out 3.05s; }
+.intro.out { animation: introOut .55s ease-in forwards; }
+.intro.out .flash { animation: flash .45s ease-out; }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@keyframes fadeOut { to { opacity: 0; } }
+@keyframes countOut { to { opacity: 0; transform: scale(.4); filter: blur(6px); } }
+@keyframes slam { 0% { opacity: 0; transform: scale(3); } 70% { opacity: 1; transform: scale(.94); } 100% { opacity: 1; transform: scale(1); } }
+@keyframes ribbon { to { clip-path: inset(0 0 0 0); } }
+@keyframes shine { 0% { background-position: -200% 0; } 60%, 100% { background-position: 200% 0; } }
+@keyframes raysIn { to { opacity: 1; } }
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes flash { 0% { opacity: .95; } 100% { opacity: 0; } }
+@keyframes introOut { to { opacity: 0; transform: scale(1.12); } }
+@keyframes shake { 0%, 100% { translate: 0 0; } 20% { translate: -8px 4px; } 40% { translate: 7px -5px; } 60% { translate: -5px -3px; } 80% { translate: 4px 5px; } }
+.intro .core { animation: shake .35s linear 3.35s; }
+@media (prefers-reduced-motion: reduce) {
+  .intro *, .intro .thirty::after { animation-duration: 1ms !important; animation-delay: 0s !important; animation-iteration-count: 1 !important; }
+  .intro .pre, .intro .count { display: none; }
+}
 </style>
+
+<div class="intro" id="intro" role="dialog" aria-label="Shogun 30th anniversary">
+  <canvas id="sparks" aria-hidden="true"></canvas>
+  <div class="rays" aria-hidden="true"></div>
+  <div class="core">
+    <div class="pre">MYSTICAL SOFTWARE</div>
+    <div class="count" id="count" aria-hidden="true">1996</div>
+  </div>
+  <div class="big">
+    <div class="thirty">30<span class="th">TH</span></div>
+    <div class="ribbon">ANNIVERSARY</div>
+    <div class="years">1996 &middot; 2026</div>
+    <div class="line">SHOGUN</div>
+  </div>
+  <div class="start"><span id="startLabel">PRESS START</span></div>
+  <div class="skip">TAP TO SKIP</div>
+  <div class="flash"></div>
+</div>
 
 <div class="corner">
   <button type="button" class="music fs" id="fullscreen" aria-pressed="false">&#9974; FULL SCREEN</button>
@@ -229,9 +301,10 @@ footer a { color: var(--ink); }
   addEventListener('pageshow', () => { document.body.classList.remove('going'); games.forEach(g => g.classList.remove('chosen')); });
   games.forEach((g, i) => { g.addEventListener('mouseenter', () => pick(i)); g.addEventListener('focus', () => pick(i)); });
   addEventListener('keydown', e => {
+    if (e.defaultPrevented) return;
     if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { pick(sel + 1, true); e.preventDefault(); }
     else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { pick(sel - 1, true); e.preventDefault(); }
-    else if (e.key === 'Enter' && document.activeElement === document.body) games[sel].click();
+    else if (e.key === 'Enter' && !e.defaultPrevented && document.activeElement === document.body) games[sel].click();
   });
   // gamepad: d-pad or stick to choose, A or Start to play
   let last = {}, raf = 0;
@@ -243,7 +316,7 @@ footer a { color: var(--ink); }
       const was = last[gp.index] || {};
       if (now.l && !was.l) pick(sel - 1, true);
       if (now.r && !was.r) pick(sel + 1, true);
-      if (now.go && !was.go && !stage) games[sel].click();
+      if (now.go && !was.go && !stage) { if (intro) endIntro(); else games[sel].click(); }
       last[gp.index] = now;
     }
     raf = requestAnimationFrame(poll);
@@ -325,6 +398,60 @@ footer a { color: var(--ink); }
   addEventListener('pointerdown', first, true); addEventListener('keydown', first, true);
   play();   // works right away where the browser allows it
   addEventListener('pageshow', () => { if (want && track.paused && ctx) play(); });
+
+  // 30th anniversary intro: years roll from 1996 to 2026, the big 30 slams in with sparks,
+  // then PRESS START. Any tap, key or pad button goes to the menu (and starts the music).
+  let intro = document.getElementById('intro');
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (matchMedia('(hover: none)').matches) { document.getElementById('startLabel').textContent = 'TAP TO START'; }
+  const count = document.getElementById('count');
+  const t0 = performance.now();
+  (function roll() {
+    if (!intro) return;
+    const k = Math.min(1, Math.max(0, (performance.now() - t0 - 1100) / 1700));
+    count.textContent = 1996 + Math.round(30 * (1 - Math.pow(1 - k, 3)));
+    if (k >= 0.999) count.style.color = '#f3c552';
+    if (k < 1) requestAnimationFrame(roll);
+  })();
+  // embers that burst out when the 30 lands, then drift up
+  const cv = document.getElementById('sparks'), g2 = cv.getContext('2d');
+  let parts = [], burst = false, sraf = 0;
+  function sizeCv() { const d = Math.min(2, devicePixelRatio || 1); cv.width = innerWidth * d; cv.height = innerHeight * d; g2.setTransform(d, 0, 0, d, 0, 0); }
+  sizeCv(); addEventListener('resize', sizeCv);
+  function ember(x, y, fast) {
+    const a = Math.random() * Math.PI * 2, v = fast ? 3 + Math.random() * 9 : 0.3 + Math.random() * 0.8;
+    return { x, y, vx: Math.cos(a) * v, vy: fast ? Math.sin(a) * v : -0.6 - Math.random(), life: 1, size: 1 + Math.random() * 2.5, hue: 30 + Math.random() * 25 };
+  }
+  function sparks() {
+    if (!intro) return;
+    const t = performance.now() - t0, W = innerWidth, H = innerHeight;
+    if (!burst && t > 3150) { burst = true; for (let i = 0; i < (reduce ? 0 : 160); i++) parts.push(ember(W / 2, H * 0.44, true)); }
+    if (t > 3150 && parts.length < 90 && !reduce) parts.push(ember(Math.random() * W, H + 10, false));
+    g2.clearRect(0, 0, W, H);
+    g2.globalCompositeOperation = 'lighter';
+    parts = parts.filter(p => p.life > 0);
+    for (const p of parts) {
+      p.x += p.vx; p.y += p.vy; p.vx *= 0.97; p.vy = p.vy * 0.97 - 0.02; p.life -= 0.008;
+      g2.fillStyle = `hsla(${p.hue}, 95%, 60%, ${Math.max(0, p.life)})`;
+      g2.beginPath(); g2.arc(p.x, p.y, p.size, 0, 7); g2.fill();
+    }
+    sraf = requestAnimationFrame(sparks);
+  }
+  sparks();
+  // a taiko hit and a rising fanfare for the way in
+  function fanfare() {
+    tone(90, 40, 0, 0.6, 'sine', 0.7); noise(0, 0.3, 0.35);
+    [392, 523, 659, 784].forEach((f, i) => tone(f, f, 0.08 + i * 0.07, 0.16, 'square', 0.12));
+    tone(1047, 1047, 0.38, 0.5, 'square', 0.12); tone(1319, 1319, 0.38, 0.5, 'triangle', 0.1);
+  }
+  function endIntro() {
+    if (!intro || intro.classList.contains('out')) return;
+    const el = intro;
+    el.classList.add('out'); fanfare();
+    setTimeout(() => { el.remove(); cancelAnimationFrame(sraf); intro = null; games[sel].focus({ preventScroll: true }); }, 560);
+  }
+  intro.addEventListener('pointerdown', endIntro);
+  addEventListener('keydown', e => { if (intro && !e.ctrlKey && !e.metaKey && !e.altKey) { e.preventDefault(); endIntro(); } }, true);
 })();
 </script>
 
