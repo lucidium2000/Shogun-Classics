@@ -96,9 +96,16 @@
   /* rotate hint, shown only in portrait on phones */
   #rotate { display: none; color: var(--muted); font-size: 12px; text-align: center; padding: 2px 12px 0; }
   @media (orientation: portrait) { body.touch #rotate { display: block; } }
-  #overlay .rotatehint { color: #e0a94a; font-size: 16px; letter-spacing: .04em; }
   .rotatehint { display: none; }
-  @media (orientation: portrait) and (pointer: coarse) { .rotatehint { display: block; } }
+  @media (orientation: portrait) and (pointer: coarse) {
+    .rotatehint { display: flex; align-items: center; gap: 14px; margin-top: 10px; padding: 12px 18px; border: 2px solid #e0a94a; border-radius: 14px;
+      background: rgba(224, 169, 74, .14); color: #ffd27a; text-align: left; line-height: 1.15; }
+    .rotatehint b { display: block; font-size: 21px; letter-spacing: .05em; text-transform: uppercase; }
+    .rotatehint small { display: block; font-size: 15px; color: #e0a94a; letter-spacing: .08em; text-transform: uppercase; }
+    .rotatehint .phone { flex: none; width: 24px; height: 40px; border: 3px solid currentColor; border-radius: 6px; position: relative; animation: turnPhone 2.4s ease-in-out infinite; }
+    .rotatehint .phone::after { content: ""; position: absolute; left: 50%; bottom: 3px; width: 8px; height: 2px; margin-left: -4px; background: currentColor; }
+  }
+  @keyframes turnPhone { 0%, 30% { transform: rotate(0); } 55%, 85% { transform: rotate(-90deg); } 100% { transform: rotate(0); } }
 </style>
 </head>
 <body>
@@ -136,7 +143,7 @@
     <p>The 2003 fan game, running on its original KOF91 engine code, rebuilt for the browser.</p>
     <div id="bar"><i></i></div>
     <button id="go" disabled>LOADING&hellip;</button>
-    <p class="rotatehint">&#8635; Turn your phone sideways for the best view</p>
+    <div class="rotatehint"><i class="phone" aria-hidden="true"></i><span><b>Turn your phone sideways</b><small>for the best view</small></span></div>
     <p id="msg"></p>
   </div>
 </div>

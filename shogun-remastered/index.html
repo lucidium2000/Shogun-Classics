@@ -1962,9 +1962,21 @@ const Power = {
     text('SHOGUN', W / 2, 220, 64, '#55ffff', { font: FONT.dos, weight: 400, glow: '#55ffff', spacing: 14 });
     text('REMASTERED', W / 2, 272, 22, '#c9a24b', { spacing: 10 });
     if (Math.sin(this.t * 4) > -0.3) text(isTouch() ? 'TAP TO POWER ON' : 'PRESS ANY KEY OR CLICK TO POWER ON', W / 2, 360, 24, '#ebe3d3', { spacing: 3 });
-    text('MYSTICAL SOFTWARE (C)1996', W / 2, 500, 18, '#5c8c8c', { font: FONT.dos, weight: 400, spacing: 2 });
-    // phones held upright: suggest turning sideways
-    if (isTouch() && innerHeight > innerWidth) text('\u21BB  TURN YOUR PHONE SIDEWAYS FOR THE BEST VIEW', W / 2, 420, 20, '#c9a24b', { spacing: 2 });
+    const upright = isTouch() && innerHeight > innerWidth;
+    if (!upright) text('MYSTICAL SOFTWARE (C)1996', W / 2, 500, 18, '#5c8c8c', { font: FONT.dos, weight: 400, spacing: 2 });
+    // phones held upright: a big, animated nudge to turn sideways
+    if (upright) {
+      const y = 440, k = (this.t % 2.4) / 2.4, turn = k < 0.3 ? 0 : k < 0.55 ? (k - 0.3) / 0.25 : k < 0.85 ? 1 : 1 - (k - 0.85) / 0.15;
+      ctx.save();
+      ctx.fillStyle = 'rgba(224, 169, 74, .14)'; ctx.strokeStyle = '#e0a94a'; ctx.lineWidth = 4;
+      ctx.beginPath(); ctx.roundRect(150, y - 58, 660, 116, 18); ctx.fill(); ctx.stroke();
+      ctx.translate(232, y); ctx.rotate(-Math.PI / 2 * (0.5 - Math.cos(Math.PI * turn) / 2));
+      ctx.strokeStyle = '#ffd27a'; ctx.lineWidth = 6; ctx.beginPath(); ctx.roundRect(-22, -38, 44, 76, 8); ctx.stroke();
+      ctx.fillStyle = '#ffd27a'; ctx.fillRect(-8, 28, 16, 4);
+      ctx.restore();
+      text('TURN YOUR PHONE SIDEWAYS', 540, y - 16, 44, '#ffd27a', { spacing: 2 });
+      text('FOR THE BEST VIEW', 540, y + 30, 30, '#e0a94a', { spacing: 4 });
+    }
   },
 };
 function start() {
