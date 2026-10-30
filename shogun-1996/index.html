@@ -264,8 +264,8 @@ body.play .fatal { position: fixed; z-index: 6; left: 50%; transform: translateX
         <span></span>
       </div>
       <div class="actions">
-        <button type="button" class="key" data-k="k">K<small>KEERO</small></button>
-        <button type="button" class="key" data-k="s">S<small>SHO'KI</small></button>
+        <button type="button" class="key" data-k="k">K<small>SPECIAL</small></button>
+        <button type="button" class="key" data-k="s">S<small>SPECIAL</small></button>
         <button type="button" class="key punch" data-k=" ">SPACE<small>PUNCH</small></button>
         <button type="button" class="key enter" data-k="\r">START</button>
         <button type="button" class="key cheat" data-k="&gt;">&gt;<small>KEERO SKIP</small></button>
@@ -285,6 +285,7 @@ body.play .fatal { position: fixed; z-index: 6; left: 50%; transform: translateX
         <tr><td><kbd>4</kbd> or <kbd>←</kbd></td><td>Block. <kbd>6</kbd> drops the guard.</td></tr>
         <tr><td>Block, then <kbd>4</kbd><kbd>6</kbd><kbd>6</kbd></td><td>Keero's fireball.</td></tr>
         <tr><td>Block, then <kbd>2</kbd><kbd>6</kbd><kbd>8</kbd></td><td>Sho'ki's sword special.</td></tr>
+        <tr><td><kbd>K</kbd> or <kbd>S</kbd> in a fight</td><td>Shortcut: does your hero's special for you.</td></tr>
         <tr><td><kbd>0</kbd></td><td>Redraw the screen (keyboard only).</td></tr>
         <tr><td><kbd>Enter</kbd></td><td>Every "PRESS (ENTER)" prompt. The game hides what you type in black, so the hint under the screen tells you when it is listening.</td></tr>
       </table>
@@ -5511,10 +5512,35 @@ function patchSource(name, src, mode) {
   // Two-player mode in the original is broken, so it is not offered: at the
   // "(1) OR (2) PLAYERS" prompt Enter picks one player and 2 does nothing.
   const onScreen = str => { let t = ''; for (const c of vm.screen.chars) t += c < 128 ? String.fromCharCode(c) : ' '; return t.includes(str); };
+  // block first, then once the block screen has finished drawing (it stops changing),
+  // type the rest; some stages read and drop one key while drawing it
+  let specialBusy = false;
+  const special = rest => {
+    if (specialBusy) return;
+    // already standing in a block (a special leaves you there): just type the motion
+    const f = vm.frame, inBlock = f && f.proc && ['KL', 'KL2', 'KL3', 'KL4'].some(l => { const at = f.proc.labels[l]; return at !== undefined && f.pc >= at && f.pc <= at + 8; });
+    if (inBlock) { for (const c of rest) vm.pushKey(c); return; }
+    specialBusy = true; vm.pushKey('4');
+    const snap = () => String.fromCharCode.apply(null, Array.from(vm.screen.chars));
+    let last = '', still = 0, n = 0;
+    const tick = () => {
+      const now = snap();
+      still = (now === last && !vm.keys.length) ? still + 1 : 0; last = now;
+      if (still >= 3 || ++n > 60) { for (const c of rest) vm.pushKey(c); specialBusy = false; return; }
+      setTimeout(tick, 30);
+    };
+    setTimeout(tick, 30);
+  };
   const press = ch => {
     if (!started) { start(); return; }
     speaker.unlock();
     if ((ch === '\r' || ch === '2') && onScreen('(1) OR (2) PLAYERS')) { if (ch === '2') return; ch = '1'; }
+    // in a fight, K and S type your hero's special for you: from a block, Keero's
+    // fireball is 4 6 6 and Sho'ki's sword special is 2 6 8 (each hero has just one)
+    if ((ch === 'k' || ch === 's' || ch === 'K' || ch === 'S') && onScreen('ROUND') && !onScreen("Press 'K'")) {
+      special(/SHO/.test(String(vm.getVar('PN$'))) ? '268' : '466');
+      return;
+    }
     vm.pushKey(ch);
   };
   document.querySelectorAll('.key').forEach(k => {
