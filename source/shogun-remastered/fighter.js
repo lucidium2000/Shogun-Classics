@@ -41,7 +41,7 @@ class Fighter {
     this.pose = Rig.copy(Rig.POSES[this.def.idle[0]]); this.target = this.def.idle[0]; this.speed = 10;
     this.digits = []; this.punchAlt = 0; this.buffer = null; this.think = 0.6; this.punchCount = 0;
     this.ropes = [];
-    if (this.look.hoodTail) this.ropes.push({ r: new Rig.Rope(6, 10, 11, this.look.hoodTail), at: 'head' });
+    if (this.look.hoodTail) this.ropes.push({ r: new Rig.Rope(4, 7, 11, this.look.hoodTail), at: 'head' });
     if (this.look.band) this.ropes.push({ r: new Rig.Rope(7, 9, 5, this.look.band), at: 'head' });
     if (this.look.belt && this.look.gi) this.ropes.push({ r: new Rig.Rope(4, 8, 4, this.look.belt), at: 'belt' }, { r: new Rig.Rope(4, 9, 4, this.look.belt), at: 'belt' });
     if (this.look.shadow) for (let i = 0; i < 4; i++) this.ropes.push({ r: new Rig.Rope(6, 12, 9 - i, 'rgba(10,14,26,0.9)'), at: 'belt' });

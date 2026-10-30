@@ -92,7 +92,7 @@ const Rig = (() => {
       // sōhei warrior monk: white katō hood, crimson robe, grey shawl, big juzu beads, wrapped forearms, dark hakama
       name: 'KEERO', s: 1, skin: '#c48a5e', gi: '#8a2620', pants: '#262220', sleeve: 'elbow', fore: '#e6dfd0', hand: '#ece6da',
       belt: '#b08a3a', band: null, hood: '#ece6da', hoodTail: '#e2dccf', hair: '#17110e', hairStyle: 'hood2', sohei: true, shawl: '#5b5753', robe: '#8a2620', beads: '#171210',
-      shW: 42, waist: 32, limb: 1, weapon: null,
+      shW: 42, waist: 32, limb: 1, weapon: 'katana',
     },
     shokei: {
       // ronin samurai: indigo kimono, black lacquered dō laced in blue, kusazuri, grey hakama, topknot
