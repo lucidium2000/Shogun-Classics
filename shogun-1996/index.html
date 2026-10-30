@@ -303,7 +303,7 @@ body.play .fatal { position: fixed; z-index: 6; left: 50%; transform: translateX
       <h2>ABOUT THIS PORT</h2>
       <p>Nothing here was redrawn. The page carries a small QBasic interpreter, and it runs the 1996 <code>SHOGUN.BAS</code> and its stage 4 file <code>CSHOGUN.BAS</code> line by line: the same <code>PRINT</code> art, <code>PLAY</code> music, delay loops and the same habit of the enemy attacking whenever your key buffer runs dry.</p>
       <ul>
-        <li><b>Restored</b> fixes what kept parts of the game from working in 1996. Several fatality codes were written with a trailing space (<code>"668 "</code>), which <code>INPUT</code> can never return. The Yamana secret fatality restarted the stage instead of moving on. Beating Frill looped you back to Frill. The "Mystical Software Presents" intro was in the code but skipped with a <code>GOTO</code>.</li>
+        <li><b>Restored</b> fixes what kept parts of the game from working in 1996. Several fatality codes were written with a trailing space (<code>"668 "</code>), which <code>INPUT</code> can never return. The Yamana secret fatality restarted the stage instead of moving on. Beating Frill looped you back to Frill. The "Mystical Software Presents" intro was in the code but skipped with a <code>GOTO</code>. Fights are fair now too: in 1996 every mashed key waited in the keyboard buffer, so hammering Space won every exchange. Restored throws away keys pressed during an animation, counters a punch thrown too soon after the last exchange, and lets the enemy strike at a random moment, so timing beats mashing. Original keeps the 1996 behaviour.</li>
         <li><b>Original</b> runs the files exactly as found, bugs included.</li>
         <li>The game-over file <code>LEND.BAS</code> lived on a floppy that never made it into the zip, so it was recreated in the same style. The Restored ending after Frill is new too.</li>
         <li><b>CPU</b> sets how fast the delay loops run. The code itself asked whether it was on a 386 or a 486.</li>
@@ -5360,6 +5360,34 @@ function patchSource(name, src, mode) {
   src = src.replace(/\r/g, '');
   if (mode !== 'restored') return src;
   const rep = (a, b) => { if (!src.includes(a)) throw new Error('patch did not apply to ' + name + ': ' + a.slice(0, 40)); src = src.split(a).join(b); };
+  // Fair fights. In 1996 every mashed key waited in the keyboard buffer, and the fight loop
+  // read your key before the enemy's roll, so mashing Space won every exchange (see the
+  // "PLEASE FIND A KEYBOARD BUFFER CLEAR STATEMENT" note in SHOGUN.BAS). Now, after each
+  // exchange: keys pressed during the animation are thrown away, a punch thrown within 0.3 s
+  // (a mash, not a read) is countered, and the enemy attacks at a random moment 0.3-1.3 s in.
+  const fair = (skip, flushLabel, poll, pollNew, roll, rollNew) => {
+    rep(skip, skip + flushLabel + ': IF INKEY$ <> "" THEN GOTO ' + flushLabel + '\nLET NH = TIMER + .3: LET ET = TIMER + .3 + RND\n');
+    rep(poll, pollNew); rep(roll, rollNew);
+  };
+  if (name === 'SHOGUN') {
+    fair('SKIP: COLOR 15: COLOR 0:\n', 'FAIR1',
+      'INPUG: LET G$ = "I": G$ = INKEY$: IF G$ = " " THEN GOTO HIT\n', 'INPUG: LET G$ = "I": G$ = INKEY$: IF (G$ = " ") AND (TIMER < NH) THEN GOTO EHIT\nIF G$ = " " THEN GOTO HIT\n',
+      'IF (TWO < 1) AND (RD = 1) THEN GOTO IMPUG\nRANDOMIZE TIMER', 'IF (TWO < 1) AND (RD = 1) THEN GOTO IMPUG\nIF TIMER < ET THEN GOTO INPUG\nRANDOMIZE TIMER');
+    fair('SKIP2: COLOR 15: COLOR 0:\n', 'FAIR2',
+      'IF G$ = " " THEN GOTO HIT2\nIF G$ = "6" THEN GOTO POWER2\n', 'IF (G$ = " ") AND (TIMER < NH) THEN GOTO EHIT2\nIF G$ = " " THEN GOTO HIT2\nIF G$ = "6" THEN GOTO POWER2\n',
+      'IF (TWO < 1) AND (RD = 1) THEN GOTO IMPUG2\nRANDOMIZE TIMER', 'IF (TWO < 1) AND (RD = 1) THEN GOTO IMPUG2\nIF TIMER < ET THEN GOTO IMPUG2\nRANDOMIZE TIMER');
+    fair('SKIP3: COLOR 15: COLOR 0:\n', 'FAIR3',
+      'IMPUG3: LET G$ = "": G$ = INKEY$: IF G$ = " " THEN GOTO HIT3\n', 'IMPUG3: LET G$ = "": G$ = INKEY$: IF (G$ = " ") AND (TIMER < NH) THEN GOTO EHIT3\nIF G$ = " " THEN GOTO HIT3\n',
+      'IF (TWO < 1) AND (RD = 1) THEN GOTO IMPUG3\nRANDOMIZE TIMER', 'IF (TWO < 1) AND (RD = 1) THEN GOTO IMPUG3\nIF TIMER < ET THEN GOTO IMPUG3\nRANDOMIZE TIMER');
+    fair('SKIP4: COLOR 15: COLOR 0:\n', 'FAIR4',
+      'IMPUG4: G$ = INKEY$: IF G$ = " " THEN GOTO HIT4\n', 'IMPUG4: G$ = INKEY$: IF (G$ = " ") AND (TIMER < NH) THEN GOTO EHIT4\nIF G$ = " " THEN GOTO HIT4\n',
+      'IF (HKL = 1) AND (G$ = "4") THEN LET HKL = 0: GOTO BLOCK4\nRANDOMIZE TIMER', 'IF (HKL = 1) AND (G$ = "4") THEN LET HKL = 0: GOTO BLOCK4\nIF TIMER < ET THEN GOTO IMPUG4\nRANDOMIZE TIMER');
+  }
+  if (name === 'CSHOGUN') {
+    fair('SKIP3: COLOR 15: COLOR 0:\n', 'FAIR5',
+      'IMPUG3: G$ = INKEY$:\nIF G$ = " " THEN GOTO HIT3\n', 'IMPUG3: G$ = INKEY$:\nIF (G$ = " ") AND (TIMER < NH) THEN GOTO EHIT3\nIF G$ = " " THEN GOTO HIT3\n',
+      '\nRT: RANDOMIZE TIMER: X% = INT(RND * 4)', '\nIF TIMER < ET THEN GOTO IMPUG3\nRT: RANDOMIZE TIMER: X% = INT(RND * 4)');
+  }
   if (name === 'SHOGUN') {
     rep('RANDOMIZE TIMER\nGOTO NP\n', 'RANDOMIZE TIMER\n');
     rep('DECLARE SUB SHOGUNL2 (PN$)\n', 'DECLARE SUB SHOGUNL2 (PN$)\nDIM SHARED RTY\n');
