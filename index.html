@@ -163,6 +163,13 @@ footer a { color: var(--ink); }
 .intro .skip { position: absolute; z-index: 5; right: max(14px, env(safe-area-inset-right, 0px)); bottom: calc(12px + env(safe-area-inset-bottom, 0px)); font-family: var(--pixel); font-size: 17px;
   letter-spacing: .14em; color: var(--muted); animation: cut .3s 5.9s forwards; }
 .intro.out { animation: introOut .45s ease-in forwards; }
+/* before the first tap the show waits on a PRESS START screen, so its sounds can play */
+.intro:not(.go) *, .intro:not(.go) *::before { animation-play-state: paused !important; }
+.intro .coin { position: absolute; inset: 0; z-index: 5; display: grid; place-content: center; justify-items: center; gap: 14px; text-align: center; }
+.intro .coin .ms { font-family: var(--pixel); font-size: clamp(18px, 3.4vw, 26px); letter-spacing: .3em; padding-left: .3em; color: #52eeee; }
+.intro .coin .ps { font-family: var(--pixel); font-size: clamp(30px, 6vw, 46px); letter-spacing: .3em; padding-left: .3em; color: #fff; }
+.intro:not(.go) .coin .ps { animation: blink 1s steps(2) infinite; animation-play-state: running !important; }
+.intro.go .coin, .intro:not(.go) .skip, .intro:not(.go) .dos { display: none; }
 .intro.out .flash { animation: flash .4s ease-out; }
 @keyframes on { to { opacity: 1; } }
 @keyframes cut { to { opacity: 0; visibility: hidden; } }
@@ -200,6 +207,7 @@ footer a { color: var(--ink); }
   <canvas id="sparks" aria-hidden="true"></canvas>
   <div class="start"><span id="startLabel">PRESS START</span></div>
   <div class="skip">TAP TO SKIP</div>
+  <div class="coin"><div class="ms">MYSTICAL SOFTWARE &middot; 30TH ANNIVERSARY</div><div class="ps" id="coinLabel">PRESS START</div></div>
   <div class="flash"></div>
 </div>
 
@@ -326,7 +334,7 @@ footer a { color: var(--ink); }
       const was = last[gp.index] || {};
       if (now.l && !was.l) pick(sel - 1, true);
       if (now.r && !was.r) pick(sel + 1, true);
-      if (now.go && !was.go && !stage) { if (intro) endIntro(); else games[sel].click(); }
+      if (now.go && !was.go && !stage) { if (intro) introTap(); else games[sel].click(); }
       last[gp.index] = now;
     }
     raf = requestAnimationFrame(poll);
@@ -356,7 +364,7 @@ footer a { color: var(--ink); }
 
   // title music at 70% (through WebAudio, since phones ignore <audio> volume); browsers start it on the first tap or key
   const btn = document.getElementById('music');
-  let want = true, ctx = null, gain = null;
+  let want = true, ctx = null, gain = null, bus = null;   // bus: where tone() and noise() play (the intro's own, so skipping can cut it)
   function audio() {
     if (!ctx) { try { const AC = window.AudioContext || window.webkitAudioContext; ctx = new AC(); } catch (e) { return null; } }
     if (ctx.state === 'suspended') ctx.resume();
@@ -368,7 +376,7 @@ footer a { color: var(--ink); }
     const o = ac.createOscillator(), g = ac.createGain(), t0 = ac.currentTime + at;
     o.type = type; o.frequency.setValueAtTime(f0, t0); o.frequency.exponentialRampToValueAtTime(f1, t0 + len);
     g.gain.setValueAtTime(vol, t0); g.gain.exponentialRampToValueAtTime(0.0001, t0 + len);
-    o.connect(g); g.connect(ac.destination); o.start(t0); o.stop(t0 + len + 0.02);
+    o.connect(g); g.connect(bus || ac.destination); o.start(t0); o.stop(t0 + len + 0.02);
   }
   function noise(at, len, vol) {
     const ac = audio(); if (!ac) return;
@@ -376,7 +384,7 @@ footer a { color: var(--ink); }
     for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / n);
     const s = ac.createBufferSource(), g = ac.createGain(), f = ac.createBiquadFilter();
     f.type = 'lowpass'; f.frequency.value = 2400; g.gain.value = vol;
-    s.buffer = buf; s.connect(f); f.connect(g); g.connect(ac.destination); s.start(ac.currentTime + at);
+    s.buffer = buf; s.connect(f); f.connect(g); g.connect(bus || ac.destination); s.start(ac.currentTime + at);
   }
   blip = () => { tone(660, 990, 0, 0.06, 'square', 0.12); };
   confirm = () => {
@@ -410,23 +418,25 @@ footer a { color: var(--ink); }
   addEventListener('pageshow', () => { if (want && track.paused && ctx) play(); });
 
   // 30th anniversary intro: a DOS boot, the years roll from 1996 to 2026, a sword slash,
-  // the logo and boxes, ROUND 30 / FIGHT!, then PRESS START. Any tap, key or pad button goes to the menu (and starts the music).
+  // the logo and boxes, ROUND 30 / FIGHT!, then PRESS START. The first tap starts it (browsers only allow sound after one), the next goes to the menu.
   let intro = document.getElementById('intro');
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if (matchMedia('(hover: none)').matches) { document.getElementById('startLabel').textContent = 'TAP TO START'; }
+  if (matchMedia('(hover: none)').matches) { document.getElementById('startLabel').textContent = 'TAP TO START'; document.getElementById('coinLabel').textContent = 'TAP TO START'; }
   const count = document.getElementById('count');
-  const t0 = performance.now();
+  let t0 = 0;   // set when the show starts
   // the 1996 boot: type out the command that started it all
   const dos = document.getElementById('dos');
   const bootText = 'MYSTICAL SOFTWARE (C) 1996\n\nC:\\>CD SHOGUN\nC:\\SHOGUN>QBASIC /RUN SHOGUN.BAS';
   (function type() {
     if (!intro) return;
+    if (!t0) { requestAnimationFrame(type); return; }
     const n = Math.floor(Math.max(0, performance.now() - t0 - 150) / 22);
     dos.innerHTML = bootText.slice(0, n).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace('MYSTICAL SOFTWARE', '<b>MYSTICAL SOFTWARE</b>') + '<span class="cursor"></span>';
     if (n <= bootText.length) requestAnimationFrame(type);
   })();
   (function roll() {
     if (!intro) return;
+    if (!t0) { requestAnimationFrame(roll); return; }
     const k = Math.min(1, Math.max(0, (performance.now() - t0 - 1600) / 1150));
     count.textContent = 1996 + Math.round(30 * (1 - Math.pow(1 - k, 3)));
     if (k >= 0.999) count.style.color = '#fff';
@@ -443,7 +453,7 @@ footer a { color: var(--ink); }
   }
   function sparks() {
     if (!intro) return;
-    const t = performance.now() - t0, W = innerWidth, H = innerHeight;
+    const t = t0 ? performance.now() - t0 : 0, W = innerWidth, H = innerHeight;
     if (!burst && t > 2950) { burst = true; for (let i = 0; i < (reduce ? 0 : 180); i++) parts.push(ember(W * (0.15 + Math.random() * 0.7), H / 2 + (W / 2 - Math.random() * W) * 0.25, true)); }
     if (t > 3000 && parts.length < 70 && !reduce) parts.push(ember(Math.random() * W, H + 10, false));
     g2.clearRect(0, 0, W, H);
@@ -464,14 +474,53 @@ footer a { color: var(--ink); }
     [262, 311, 392, 523].forEach((f, i) => tone(f, f, 0.12 + i * 0.06, 0.14, 'square', 0.12));
     tone(523, 523, 0.38, 0.4, 'square', 0.1); tone(784, 784, 0.38, 0.4, 'square', 0.08);
   }
+  // the katana: an air whoosh sweeping up, then the ring of steel
+  function blade(at) {
+    const ac = audio(); if (!ac) return;
+    const t = ac.currentTime + at, out = bus || ac.destination;
+    const n = Math.floor(ac.sampleRate * 0.35), buf = ac.createBuffer(1, n, ac.sampleRate), d = buf.getChannelData(0);
+    for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
+    const src = ac.createBufferSource(), bp = ac.createBiquadFilter(), wg = ac.createGain();
+    bp.type = 'bandpass'; bp.Q.value = 1.4; bp.frequency.setValueAtTime(500, t); bp.frequency.exponentialRampToValueAtTime(7000, t + 0.2);
+    wg.gain.setValueAtTime(0.0001, t); wg.gain.exponentialRampToValueAtTime(0.9, t + 0.12); wg.gain.exponentialRampToValueAtTime(0.0001, t + 0.3);
+    src.buffer = buf; src.connect(bp); bp.connect(wg); wg.connect(out); src.start(t);
+    const ring = t + 0.13;
+    [[2489, .16], [3729, .1], [5126, .08], [6640, .05], [8870, .035]].forEach(([f, v], i) => {
+      const o = ac.createOscillator(), g = ac.createGain();
+      o.type = 'sine'; o.frequency.setValueAtTime(f * 1.03, ring); o.frequency.exponentialRampToValueAtTime(f, ring + 0.08);
+      g.gain.setValueAtTime(0.0001, ring); g.gain.exponentialRampToValueAtTime(v, ring + 0.006); g.gain.exponentialRampToValueAtTime(0.0001, ring + 1.4 - i * 0.18);
+      o.connect(g); g.connect(out); o.start(ring); o.stop(ring + 1.5);
+    });
+    const hp = ac.createBiquadFilter(), hs = ac.createBufferSource(), hg = ac.createGain();
+    hp.type = 'highpass'; hp.frequency.value = 5000; hg.gain.setValueAtTime(0.35, ring); hg.gain.exponentialRampToValueAtTime(0.0001, ring + 0.09);
+    hs.buffer = buf; hs.connect(hp); hp.connect(hg); hg.connect(out); hs.start(ring);
+  }
+  // start the show: everything is timed from here, sounds included
+  function beginIntro() {
+    if (!intro || t0) return;
+    t0 = performance.now(); intro.classList.add('go');
+    const ac = audio(); if (!ac) return;
+    bus = ac.createGain(); bus.connect(ac.destination);
+    blade(2.82);                                                                   // the slash
+    tone(90, 38, 2.97, 0.7, 'sine', 0.8); noise(2.97, 0.35, 0.4);                  // the logo lands
+    [4.25, 4.42].forEach(a => tone(880, 880, a, 0.1, 'square', 0.12));             // ROUND 30
+    tone(70, 35, 5.15, 0.8, 'sine', 0.8); noise(5.15, 0.5, 0.45); tone(220, 110, 5.15, 0.4, 'sawtooth', 0.1);   // FIGHT!
+    bus.gain.setValueAtTime(1, ac.currentTime);
+    const b = bus; bus = null; introBus = b;
+  }
+  let introBus = null;
+  function introTap() { if (!intro) return; if (!t0) beginIntro(); else endIntro(); }
   function endIntro() {
     if (!intro || intro.classList.contains('out')) return;
     const el = intro;
+    if (introBus) { try { introBus.disconnect(); } catch (e) {} introBus = null; }
     el.classList.add('out'); fanfare();
     setTimeout(() => { el.remove(); cancelAnimationFrame(sraf); intro = null; games[sel].focus({ preventScroll: true }); }, 560);
   }
-  intro.addEventListener('pointerdown', endIntro);
-  addEventListener('keydown', e => { if (intro && !e.ctrlKey && !e.metaKey && !e.altKey) { e.preventDefault(); endIntro(); } }, true);
+  intro.addEventListener('pointerdown', introTap);
+  addEventListener('keydown', e => { if (intro && !e.ctrlKey && !e.metaKey && !e.altKey) { e.preventDefault(); introTap(); } }, true);
+  // where the browser already allows sound (or there is no sound), the show starts on its own
+  { const ac = audio(); if (!ac || ac.state === 'running') beginIntro(); }
 })();
 </script>
 
