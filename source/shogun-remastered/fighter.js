@@ -1,6 +1,6 @@
 // Shogun Classics - https://github.com/lucidium2000/Shogun-Classics
 // Copyright (c) 1996-2026 Chris (lucidium2000) and Mystical Software. MIT License, see LICENSE.
-// Created with Corbin Hildreth, Jason Rudasill, Chance Kornegay and Elijah Matthew Cash.
+// Created with Corbin Hildreth, Jason Rudisill, Chance Kornegay and Elijah Matthew Cash.
 /* Fighters: move data, the state machine, hit resolution and the enemy AI.
    Damage numbers, the 10-point life bar and every enemy rule are taken from
    SHOGUN.BAS / CSHOGUN.BAS. */

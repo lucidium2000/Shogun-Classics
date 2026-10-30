@@ -1,6 +1,6 @@
 // Shogun Classics - https://github.com/lucidium2000/Shogun-Classics
 // Copyright (c) 1996-2026 Chris (lucidium2000) and Mystical Software. MIT License, see LICENSE.
-// Created with Corbin Hildreth, Jason Rudasill, Chance Kornegay and Elijah Matthew Cash.
+// Created with Corbin Hildreth, Jason Rudisill, Chance Kornegay and Elijah Matthew Cash.
 /* Browser implementation of the Allegro subset used by KOF91.
    Graphics are done here in C (16-bit RGB565 like the original DirectX build),
    while timing, files, input and audio are provided by the JavaScript host. */

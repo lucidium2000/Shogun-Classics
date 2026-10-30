@@ -48,7 +48,7 @@ straight from disk.
 ## Credits
 
 Created by Chris ([lucidium2000](https://github.com/lucidium2000)) with
-**Corbin Hildreth**, **Jason Rudasill**, **Chance Kornegay** and **Elijah Matthew Cash**,
+**Corbin Hildreth**, **Jason Rudisill**, **Chance Kornegay** and **Elijah Matthew Cash**,
 as Mystical Software, starting in 1996.
 
 ## License

@@ -1,6 +1,6 @@
 # Shogun Classics - https://github.com/lucidium2000/Shogun-Classics
 # Copyright (c) 1996-2026 Chris (lucidium2000) and Mystical Software. MIT License, see LICENSE.
-# Created with Corbin Hildreth, Jason Rudasill, Chance Kornegay and Elijah Matthew Cash.
+# Created with Corbin Hildreth, Jason Rudisill, Chance Kornegay and Elijah Matthew Cash.
 """Wrap the gzip data pack in custom sections of empty wasm modules (artifact
 hosting only serves known file types, max 15MB each). The pack is split into
 parts named <out>-1.wasm, <out>-2.wasm ... that the page joins back together."""

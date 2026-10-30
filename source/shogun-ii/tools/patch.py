@@ -1,6 +1,6 @@
 # Shogun Classics - https://github.com/lucidium2000/Shogun-Classics
 # Copyright (c) 1996-2026 Chris (lucidium2000) and Mystical Software. MIT License, see LICENSE.
-# Created with Corbin Hildreth, Jason Rudasill, Chance Kornegay and Elijah Matthew Cash.
+# Created with Corbin Hildreth, Jason Rudisill, Chance Kornegay and Elijah Matthew Cash.
 """Turn the original Kof91.c (v1.2, Win32/Allegro 3.9.32) into a version that
 builds against the web Allegro layer. The game logic is left untouched; only
 the MP3 player (xaudio), the directory scanner and busy-wait loops change."""

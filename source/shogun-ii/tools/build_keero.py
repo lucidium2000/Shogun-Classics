@@ -1,6 +1,6 @@
 # Shogun Classics - https://github.com/lucidium2000/Shogun-Classics
 # Copyright (c) 1996-2026 Chris (lucidium2000) and Mystical Software. MIT License, see LICENSE.
-# Created with Corbin Hildreth, Jason Rudasill, Chance Kornegay and Elijah Matthew Cash.
+# Created with Corbin Hildreth, Jason Rudisill, Chance Kornegay and Elijah Matthew Cash.
 """Build the Keero character folder for KOF91 from the 2004 Keerofixed photos.
 
 Photos are cut out with masks from rembg (u2net_human_seg), cleaned, scaled so
