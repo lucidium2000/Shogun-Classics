@@ -530,6 +530,7 @@ footer a { color: var(--ink); }
   function beginIntro() {
     if (!intro || t0) return;
     t0 = performance.now(); intro.classList.add('go');
+    goFull(true);   // the PRESS START tap is the one browsers allow full screen from, on every device
     const ac = audio(); if (!ac) return;
     bus = ac.createGain(); bus.connect(ac.destination);
     blade(2.82);                                                                   // the slash
@@ -550,8 +551,6 @@ footer a { color: var(--ink); }
   }
   intro.addEventListener('pointerdown', introTap);
   addEventListener('keydown', e => { if (intro && !e.ctrlKey && !e.metaKey && !e.altKey) { e.preventDefault(); introTap(); } }, true);
-  // where the browser already allows sound (or there is no sound), the show starts on its own
-  { const ac = audio(); if (!ac || ac.state === 'running') beginIntro(); }
 })();
 </script>
 
