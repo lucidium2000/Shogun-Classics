@@ -26,6 +26,7 @@ that engine's C source to WebAssembly and runs it with a JavaScript host.
    included here).
 2. `pip install ziglang` and `npm install binaryen` (for `wasm-opt`).
 3. `sh tools/build.sh`, then copy `out/kof91.wasm` to `shogun-ii/`.
-4. To change game data: `python3 tools/unpak.py shogun-ii/shogun2-data-1.wasm shogun-ii/shogun2-data-2.wasm game/`,
+4. To make the public pack from a full build: `python3 tools/public_pack.py full-1.wasm full-2.wasm work/ shogun-ii/shogun2-data`.
+5. To change game data: `python3 tools/unpak.py shogun-ii/shogun2-data-1.wasm shogun-ii/shogun2-data-2.wasm game/`,
    edit `game/`, then `python3 tools/pack.py game data.pak` and
    `python3 tools/wrap.py data.pak shogun-ii/shogun2-data`.
