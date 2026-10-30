@@ -196,6 +196,9 @@ body.play .fatal { position: fixed; z-index: 6; left: 50%; transform: translateX
   body.play .fatal { top: auto; bottom: calc(10px + env(safe-area-inset-bottom, 0px)); width: min(44vw, 420px); padding: 8px; }
   body.play .fatal-note { display: none; }
 }
+.power .rotatehint { font-size: clamp(16px, 4.4vw, 22px); color: var(--amber); letter-spacing: .06em; }
+.rotatehint { display: none; }
+@media (orientation: portrait) and (pointer: coarse) { .rotatehint { display: block; } }
 </style>
 
 <button type="button" id="opts" aria-label="Options" aria-expanded="false">&#9776;</button>
@@ -230,6 +233,7 @@ body.play .fatal { position: fixed; z-index: 6; left: 50%; transform: translateX
         <span class="inner">
           <span class="big">SHOGUN</span>
           <span class="cta">PRESS TO POWER ON</span>
+          <span class="rotatehint">&#8635; Turn your phone sideways for the best view</span>
           <span class="fine">The 1996 QBasic code, running as it was written. Turn sound up.</span>
         </span>
       </button>

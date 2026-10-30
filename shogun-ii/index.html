@@ -96,6 +96,9 @@
   /* rotate hint, shown only in portrait on phones */
   #rotate { display: none; color: var(--muted); font-size: 12px; text-align: center; padding: 2px 12px 0; }
   @media (orientation: portrait) { body.touch #rotate { display: block; } }
+  #overlay .rotatehint { color: #e0a94a; font-size: 16px; letter-spacing: .04em; }
+  .rotatehint { display: none; }
+  @media (orientation: portrait) and (pointer: coarse) { .rotatehint { display: block; } }
 </style>
 </head>
 <body>
@@ -133,10 +136,11 @@
     <p>The 2003 fan game, running on its original KOF91 engine code, rebuilt for the browser.</p>
     <div id="bar"><i></i></div>
     <button id="go" disabled>LOADING&hellip;</button>
+    <p class="rotatehint">&#8635; Turn your phone sideways for the best view</p>
     <p id="msg"></p>
   </div>
 </div>
-<script src="host.js?v=21"></script>
+<script src="host.js?v=22"></script>
 <script>
 (async () => {
   const canvas = document.getElementById('screen');
@@ -240,8 +244,8 @@
 
   let wasm, files;
   try {
-    const wasmP = fetch('kof91.wasm?v=21').then(r => { if (!r.ok) throw new Error('kof91.wasm missing'); return r.arrayBuffer(); });
-    files = await KOF.loadPak(['shogun2-data-1.wasm?v=21', 'shogun2-data-2.wasm?v=21'], f => bar.style.width = Math.round(f * 100) + '%');
+    const wasmP = fetch('kof91.wasm?v=22').then(r => { if (!r.ok) throw new Error('kof91.wasm missing'); return r.arrayBuffer(); });
+    files = await KOF.loadPak(['shogun2-data-1.wasm?v=22', 'shogun2-data-2.wasm?v=22'], f => bar.style.width = Math.round(f * 100) + '%');
     wasm = await wasmP;
   } catch (e) {
     msg.textContent = 'Could not load the game files: ' + e.message;

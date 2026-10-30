@@ -9,10 +9,10 @@ function patchSource(name, src, mode) {
   // Fair fights. In 1996 every mashed key waited in the keyboard buffer, and the fight loop
   // read your key before the enemy's roll, so mashing Space won every exchange (see the
   // "PLEASE FIND A KEYBOARD BUFFER CLEAR STATEMENT" note in SHOGUN.BAS). Now, after each
-  // exchange: keys pressed during the animation are thrown away, a punch thrown within 0.3 s
-  // (a mash, not a read) is countered, and the enemy attacks at a random moment 0.3-1.3 s in.
+  // exchange: keys pressed during the animation are thrown away, a punch thrown within 0.15 s
+  // (a mash, not a read) is countered, and the enemy attacks at a random moment 0.7-1.7 s in.
   const fair = (skip, flushLabel, poll, pollNew, roll, rollNew) => {
-    rep(skip, skip + flushLabel + ': IF INKEY$ <> "" THEN GOTO ' + flushLabel + '\nLET NH = TIMER + .3: LET ET = TIMER + .3 + RND\n');
+    rep(skip, skip + flushLabel + ': IF INKEY$ <> "" THEN GOTO ' + flushLabel + '\nLET NH = TIMER + .15: LET ET = TIMER + .7 + RND\n');
     rep(poll, pollNew); rep(roll, rollNew);
   };
   if (name === 'SHOGUN') {
