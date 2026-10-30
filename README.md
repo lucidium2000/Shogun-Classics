@@ -26,6 +26,7 @@ shogun-1996/            Shogun (1996), one self-contained page
 shogun-remastered/      Shogun Remastered, one self-contained page
 shogun-ii/              Shogun II Restored: page, JS host, engine and data pack
 covers/                 box art used on the menu
+music/                  collection title music
 source/
   launcher/             menu source
   shogun-1996/          original .BAS files, interpreter (engine.js), page template
