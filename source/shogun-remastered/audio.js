@@ -1,3 +1,6 @@
+// Shogun Classics - https://github.com/lucidium2000/Shogun-Classics
+// Copyright (c) 1996-2026 Chris (lucidium2000) and Mystical Software. MIT License, see LICENSE.
+// Created with Corbin Hildreth, Jason Rudasill, Chance Kornegay and Elijah Matthew Cash.
 /* SHOGUN Remastered: procedural audio.
    Nothing is sampled. The 1996 PLAY strings are parsed and re-voiced with
    taiko, koto and shakuhachi patches, and the fight loops are generated from

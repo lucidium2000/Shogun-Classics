@@ -45,6 +45,12 @@ To play locally, serve the folder (for example `python3 -m http.server`) and ope
 http://localhost:8000. Shogun II needs a web server; the other two also open
 straight from disk.
 
+## Credits
+
+Created by Chris ([lucidium2000](https://github.com/lucidium2000)) with
+**Corbin Hildreth**, **Jason Rudasill**, **Chance Kornegay** and **Elijah Matthew Cash**,
+as Mystical Software, starting in 1996.
+
 ## License
 
 Copyright (c) 1996-2026 Chris ([lucidium2000](https://github.com/lucidium2000)) and

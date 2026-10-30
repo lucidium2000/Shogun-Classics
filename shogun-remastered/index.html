@@ -6,6 +6,9 @@
 <style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
 </head>
 <body>
+<!-- Shogun Classics - https://github.com/lucidium2000/Shogun-Classics
+     Copyright (c) 1996-2026 Chris (lucidium2000) and Mystical Software. MIT License, see LICENSE.
+     Created with Corbin Hildreth, Jason Rudasill, Chance Kornegay and Elijah Matthew Cash. -->
 <title>Shogun Remastered</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -62,6 +65,9 @@ body.touch #touch { display: flex; }
   </div>
 </div>
 <script>
+// Shogun Classics - https://github.com/lucidium2000/Shogun-Classics
+// Copyright (c) 1996-2026 Chris (lucidium2000) and Mystical Software. MIT License, see LICENSE.
+// Created with Corbin Hildreth, Jason Rudasill, Chance Kornegay and Elijah Matthew Cash.
 /* SHOGUN Remastered: procedural audio.
    Nothing is sampled. The 1996 PLAY strings are parsed and re-voiced with
    taiko, koto and shakuhachi patches, and the fight loops are generated from
@@ -404,6 +410,9 @@ const Audio = (() => {
   return A;
 })();
 
+// Shogun Classics - https://github.com/lucidium2000/Shogun-Classics
+// Copyright (c) 1996-2026 Chris (lucidium2000) and Mystical Software. MIT License, see LICENSE.
+// Created with Corbin Hildreth, Jason Rudasill, Chance Kornegay and Elijah Matthew Cash.
 /* Fighter skeleton, pose library and renderer.
    Angles are in degrees. A limb at 0 hangs straight down and positive values
    swing it toward the way the fighter faces. Arms are measured from the torso,
@@ -932,6 +941,9 @@ const Rig = (() => {
   return R;
 })();
 
+// Shogun Classics - https://github.com/lucidium2000/Shogun-Classics
+// Copyright (c) 1996-2026 Chris (lucidium2000) and Mystical Software. MIT License, see LICENSE.
+// Created with Corbin Hildreth, Jason Rudasill, Chance Kornegay and Elijah Matthew Cash.
 /* Stages. Each one pre-renders its static parallax layers once and then
    animates only the cheap things (sway, flicker, mist) every frame. */
 const Stages = (() => {
@@ -1204,6 +1216,9 @@ const Stages = (() => {
   return S;
 })();
 
+// Shogun Classics - https://github.com/lucidium2000/Shogun-Classics
+// Copyright (c) 1996-2026 Chris (lucidium2000) and Mystical Software. MIT License, see LICENSE.
+// Created with Corbin Hildreth, Jason Rudasill, Chance Kornegay and Elijah Matthew Cash.
 /* Particles, blood, projectiles' glow, gibs and screen effects. */
 const FX = (() => {
   const F = { parts: [], decals: [], gibs: [], pops: [], shake: 0, flash: 0, flashCol: '#fff', gore: true };
@@ -1425,6 +1440,9 @@ const Retro = (() => {
   return R;
 })();
 
+// Shogun Classics - https://github.com/lucidium2000/Shogun-Classics
+// Copyright (c) 1996-2026 Chris (lucidium2000) and Mystical Software. MIT License, see LICENSE.
+// Created with Corbin Hildreth, Jason Rudasill, Chance Kornegay and Elijah Matthew Cash.
 /* Keyboard, touch and gamepad, folded into two virtual pads.
    Each pad has held buttons (l r u d p sp) and an event queue. Number keys
    still work the 1996 way: 8 up, 2 down, 4 back, 6 forward, space punches. */
@@ -1546,6 +1564,9 @@ const Input = (() => {
   return I;
 })();
 
+// Shogun Classics - https://github.com/lucidium2000/Shogun-Classics
+// Copyright (c) 1996-2026 Chris (lucidium2000) and Mystical Software. MIT License, see LICENSE.
+// Created with Corbin Hildreth, Jason Rudasill, Chance Kornegay and Elijah Matthew Cash.
 /* Fighters: move data, the state machine, hit resolution and the enemy AI.
    Damage numbers, the 10-point life bar and every enemy rule are taken from
    SHOGUN.BAS / CSHOGUN.BAS. */
@@ -1775,6 +1796,9 @@ class Fighter {
   }
 }
 
+// Shogun Classics - https://github.com/lucidium2000/Shogun-Classics
+// Copyright (c) 1996-2026 Chris (lucidium2000) and Mystical Software. MIT License, see LICENSE.
+// Created with Corbin Hildreth, Jason Rudasill, Chance Kornegay and Elijah Matthew Cash.
 /* Scenes, the round flow, FINISH HIM and the fatalities. */
 const W = Stages.W, H = Stages.H, GY = Stages.GROUND;
 const cv = document.getElementById('cv'), ctx = cv.getContext('2d');
