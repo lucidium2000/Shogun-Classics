@@ -18,13 +18,36 @@ body.touch #touch { display: flex; }
 .pad::before, .pad::after { content: ""; position: absolute; background: rgba(201,162,75,0.18); }
 .pad::before { left: 50%; top: 14%; bottom: 14%; width: 2px; margin-left: -1px; }
 .pad::after { top: 50%; left: 14%; right: 14%; height: 2px; margin-top: -1px; }
-#knob { position: absolute; left: 50%; top: 50%; width: 58px; height: 58px; margin: -29px 0 0 -29px; border-radius: 50%; background: radial-gradient(circle at 40% 35%, #5a4a3a, #1a1210); border: 2px solid rgba(201,162,75,0.7); pointer-events: none; z-index: 1; }
+#knob, .knob { position: absolute; left: 50%; top: 50%; width: 58px; height: 58px; margin: -29px 0 0 -29px; border-radius: 50%; background: radial-gradient(circle at 40% 35%, #5a4a3a, #1a1210); border: 2px solid rgba(201,162,75,0.7); pointer-events: none; z-index: 1; }
 .btns { display: grid; grid-template-columns: auto auto; grid-template-rows: auto auto; gap: 12px; align-items: center; flex: none; }
 .b { width: 84px; height: 84px; border-radius: 50%; display: grid; place-items: center; font: 700 26px/1 'Barlow Condensed', 'Arial Narrow', sans-serif; letter-spacing: 1px; color: #fff; touch-action: none; border: 2px solid rgba(255,255,255,0.35); }
-#btnP { background: radial-gradient(circle at 40% 35%, #d9322b, #7a0f0b); grid-row: 1 / 3; grid-column: 2; width: 98px; height: 98px; font-size: 30px; }
-#btnSP { background: radial-gradient(circle at 40% 35%, #e8a33a, #7a4b0b); width: 64px; height: 64px; font-size: 20px; }
+#btnP, #btnP2 { background: radial-gradient(circle at 40% 35%, #d9322b, #7a0f0b); grid-row: 1 / 3; grid-column: 2; width: 98px; height: 98px; font-size: 30px; }
+#btnSP, #btnSP2 { background: radial-gradient(circle at 40% 35%, #e8a33a, #7a4b0b); width: 64px; height: 64px; font-size: 20px; }
 #btnPause { background: rgba(255,255,255,0.08); width: 46px; height: 46px; font-size: 16px; border-color: rgba(255,255,255,0.2); }
 .b.on { filter: brightness(1.5); transform: scale(0.95); }
+#btnMenu { display: none; position: fixed; z-index: 4; top: max(8px, env(safe-area-inset-top, 0px)); left: max(8px, env(safe-area-inset-left, 0px));
+  font: 700 14px/1 'Barlow Condensed', 'Arial Narrow', sans-serif; letter-spacing: 2px; color: rgba(235,227,211,0.75); text-decoration: none;
+  background: rgba(0,0,0,0.45); border: 1px solid rgba(201,162,75,0.35); border-radius: 6px; padding: 7px 10px 6px; }
+body.front #btnMenu { display: block; }
+#btnMenu:hover, #btnMenu:focus-visible { color: #fff; border-color: var(--brass); }
+/* two players on one phone: P1 on the left, P2 mirrored on the right */
+.p2grp { display: none; }
+.p1grp { display: contents; }
+.who { position: absolute; top: -18px; left: 0; right: 0; text-align: center; font: 700 13px/1 'Barlow Condensed', 'Arial Narrow', sans-serif; letter-spacing: 2px; color: var(--brass); display: none; }
+body.touch.two .who { display: block; }
+body.touch.two .p2grp { display: flex; gap: 10px; align-items: flex-end; margin-left: auto; position: relative; }
+body.touch.two #touch > .p1grp { display: flex; gap: 10px; align-items: flex-end; position: relative; }
+body.touch.two .tip { display: none !important; }
+body.touch.two .pad { width: 112px; height: 112px; }
+body.touch.two .knob, body.touch.two #knob { width: 44px; height: 44px; margin: -22px 0 0 -22px; }
+body.touch.two #btnP, body.touch.two #btnP2 { width: 66px; height: 66px; font-size: 24px; }
+body.touch.two #btnSP, body.touch.two #btnSP2 { width: 48px; height: 48px; font-size: 16px; }
+body.touch.two #btnPause { width: 40px; height: 40px; }
+@media (orientation: portrait) {
+  body.touch.two #touch { flex-direction: column; flex-wrap: nowrap; align-items: stretch; justify-content: space-around; gap: 22px; }
+  body.touch.two #touch > .p1grp { justify-content: space-between; }
+  body.touch.two .p2grp { margin-left: 0; justify-content: space-between; flex-direction: row-reverse; }
+}
 /* portrait phone: controls live under the screen */
 @media (orientation: portrait) {
   body.touch #app { justify-content: flex-start; padding-top: max(10px, env(safe-area-inset-top, 0px)); }
@@ -48,13 +71,25 @@ body.touch #touch { display: flex; }
   <div id="screen"><canvas id="cv" width="960" height="540" tabindex="0" aria-label="Shogun game screen"></canvas></div>
   <div id="touch" aria-label="Touch controls">
     <p class="tip">Hold back to block · down + P uppercut · up + P jump kick · SP special</p>
-    <div class="pad" id="dpad"><div id="knob"></div></div>
-    <div class="btns">
-      <div class="b" id="btnPause" role="button" aria-label="Pause">II</div>
-      <div class="b" id="btnP" role="button" aria-label="Punch">P</div>
-      <div class="b" id="btnSP" role="button" aria-label="Special move">SP</div>
+    <div class="p1grp">
+      <span class="who">PLAYER 1</span>
+      <div class="pad" id="dpad"><div id="knob"></div></div>
+      <div class="btns">
+        <div class="b" id="btnPause" role="button" aria-label="Pause">II</div>
+        <div class="b" id="btnP" role="button" aria-label="Punch">P</div>
+        <div class="b" id="btnSP" role="button" aria-label="Special move">SP</div>
+      </div>
+    </div>
+    <div class="p2grp" aria-label="Player 2 touch controls">
+      <span class="who">PLAYER 2</span>
+      <div class="btns">
+        <div class="b" id="btnP2" role="button" aria-label="Player 2 punch">P</div>
+        <div class="b" id="btnSP2" role="button" aria-label="Player 2 special move">SP</div>
+      </div>
+      <div class="pad" id="dpad2"><div class="knob" id="knob2"></div></div>
     </div>
   </div>
+  <a id="btnMenu" href="../" aria-label="Back to the Shogun Classics menu">&#9664; MENU</a>
 </div>
 <script>
 /*JS*/

@@ -3,6 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0b0806">
 <title>Shogun II Restored</title>
 <style>
   :root {
@@ -37,50 +40,88 @@
   #help b { color: var(--ink); font-weight: 600; }
   kbd { font-family: ui-monospace, monospace; background: var(--btn); border: 1px solid var(--line); border-radius: 3px; padding: 0 4px; color: var(--ink); }
 
-  /* touch controls */
-  #touch { display: none; width: 100%; padding: 6px 14px calc(10px + env(safe-area-inset-bottom)); justify-content: space-between; align-items: flex-end; gap: 10px; }
+  /* touch controls: sized from one unit (--b) so they fit any phone */
+  #touch { display: none; width: 100%; --b: min(13.5vw, 62px);
+    padding: 6px max(12px, env(safe-area-inset-right)) calc(10px + env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+    justify-content: space-between; align-items: flex-end; gap: 8px; pointer-events: none; }
   body.touch #touch { display: flex; }
   body.touch #help { display: none; }
-  .pad { position: relative; width: 150px; height: 150px; flex: none; }
-  .pad button, .btns button, .sys button { position: absolute; border: 1px solid var(--line); background: var(--btn); color: var(--ink);
-    font: 600 13px system-ui, sans-serif; border-radius: 10px; touch-action: none; }
-  .pad button { width: 50px; height: 50px; }
-  .pad .u { left: 50px; top: 0; } .pad .d { left: 50px; top: 100px; } .pad .l { left: 0; top: 50px; } .pad .r { left: 100px; top: 50px; }
-  .pad .ul { left: 0; top: 0; opacity: .45; } .pad .ur { left: 100px; top: 0; opacity: .45; }
-  .pad .dl { left: 0; top: 100px; opacity: .45; } .pad .dr { left: 100px; top: 100px; opacity: .45; }
-  .btns { position: relative; width: 150px; height: 130px; flex: none; }
-  .btns button { width: 64px; height: 56px; border-radius: 30px; }
-  .btns .wp { left: 0; top: 0; } .btns .sp { left: 76px; top: 0; }
-  .btns .wk { left: 0; top: 70px; } .btns .sk { left: 76px; top: 70px; }
+  #touch > * { pointer-events: auto; }
+  .dpad { position: relative; width: calc(var(--b) * 3); height: calc(var(--b) * 3); flex: none; border-radius: 50%;
+    background: radial-gradient(circle, rgba(42,30,23,.9) 0 62%, rgba(42,30,23,.35) 63%); border: 1px solid var(--line); touch-action: none; }
+  .dpad i { position: absolute; width: var(--b); height: var(--b); display: grid; place-items: center; color: var(--ink);
+    font: 600 calc(var(--b) * .3) system-ui, sans-serif; font-style: normal; border-radius: 10px; }
+  .dpad .u { left: var(--b); top: 0; } .dpad .d { left: var(--b); bottom: 0; }
+  .dpad .l { left: 0; top: var(--b); } .dpad .r { right: 0; top: var(--b); }
+  .dpad i.on { background: var(--accent); }
+  .btns { position: relative; width: calc(var(--b) * 2.25); height: calc(var(--b) * 2.25); flex: none; }
+  .btns button, .sys button { position: absolute; border: 1px solid var(--line); background: var(--btn); color: var(--ink);
+    font: 600 calc(var(--b) * .24) system-ui, sans-serif; touch-action: none; }
+  .btns button { width: var(--b); height: var(--b); border-radius: 50%; }
+  .btns .wp { left: 0; top: 0; } .btns .sp { right: 0; top: 0; }
+  .btns .wk { left: 0; bottom: 0; } .btns .sk { right: 0; bottom: 0; }
   .btns .sp, .btns .sk { background: #4a1712; }
-  .sys { position: relative; width: 70px; height: 110px; flex: none; }
-  .sys button { width: 70px; height: 40px; font-size: 11px; letter-spacing: .05em; }
-  .sys .start { top: 10px; } .sys .esc { top: 60px; }
+  .sys { width: calc(var(--b) * 1.15); flex: none; display: flex; flex-direction: column; gap: 6px; }
+  .sys button, .sys a { position: static; width: 100%; height: calc(var(--b) * .5); border-radius: 8px; font-size: calc(var(--b) * .18); letter-spacing: .05em; }
+  .sys a { display: grid; place-items: center; border: 1px solid var(--line); background: var(--btn); color: var(--ink); text-decoration: none;
+    font: 600 calc(var(--b) * .18) system-ui, sans-serif; }
+  #help a { color: var(--ink); }
+  /* two players on one phone: player 2 gets a mirrored d-pad and buttons on the right */
+  .p2 { display: none; gap: 8px; align-items: flex-end; flex: none; }
+  body.two #touch { --b: min(8.6vw, 40px); }
+  body.two .p2 { display: flex; }
+  body.two #touch { flex-wrap: wrap; --b: min(11vw, 46px); }
+  body.two #touch > .btns { order: 1; margin-right: auto; } body.two .sys { order: 2; } body.two .p2 { order: 3; width: 100%; justify-content: flex-end; }
   button.on { background: var(--accent) !important; }
+  /* phones held sideways: the game fills the height, controls sit over the sides */
+  @media (orientation: landscape) {
+    body.touch #touch { position: fixed; left: 0; right: 0; bottom: 0; --b: min(15vh, 60px); }
+    body.touch #stage { padding: 0; }
+    body.touch .sys { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(4px + env(safe-area-inset-bottom));
+      width: auto; height: auto; display: flex; gap: 8px; }
+    body.touch .sys button, body.touch .sys a { width: calc(var(--b) * 1.3); height: calc(var(--b) * .5); opacity: .8; }
+    body.touch.two #touch { --b: min(12vh, 46px); }
+    body.touch .sys { flex-direction: row; }
+    /* two players sideways: each side gets a column, buttons above the d-pad */
+    body.touch.two #touch { top: 0; display: grid; grid-template-columns: auto 1fr auto; grid-template-rows: 1fr auto; align-items: end; row-gap: 10px; }
+    body.touch.two #touch > .dpad { grid-column: 1; grid-row: 2; }
+    body.touch.two #touch > .btns { grid-column: 1; grid-row: 1; justify-self: center; margin: 0; }
+    body.touch.two .p2 { grid-column: 3; grid-row: 1 / 3; width: auto; flex-direction: column; align-items: center; align-self: end; gap: 10px; }
+    body.touch .dpad, body.touch .btns { opacity: .85; }
+  }
+  /* rotate hint, shown only in portrait on phones */
+  #rotate { display: none; color: var(--muted); font-size: 12px; text-align: center; padding: 2px 12px 0; }
+  @media (orientation: portrait) { body.touch #rotate { display: block; } }
 </style>
 </head>
 <body>
 <div id="app">
   <div id="stage"><canvas id="screen" width="320" height="200"></canvas></div>
+  <div id="rotate">Turn your phone sideways for a bigger screen</div>
   <div id="touch">
-    <div class="pad">
-      <button class="ul" data-pad="5"></button><button class="u" data-pad="4">&#9650;</button><button class="ur" data-pad="6"></button>
-      <button class="l" data-pad="1">&#9664;</button><button class="r" data-pad="2">&#9654;</button>
-      <button class="dl" data-pad="9"></button><button class="d" data-pad="8">&#9660;</button><button class="dr" data-pad="10"></button>
-    </div>
+    <div class="dpad" id="dpad"><i class="u">&#9650;</i><i class="l">&#9664;</i><i class="r">&#9654;</i><i class="d">&#9660;</i></div>
     <div class="sys">
       <button class="start" data-key="Enter">START</button>
       <button class="esc" data-key="Escape">PAUSE</button>
+      <button class="twop" id="twoP" aria-pressed="false">2P</button>
+      <a class="menu" href="../" id="toMenu">MENU</a>
     </div>
     <div class="btns">
       <button class="wp" data-pad="16">LP</button><button class="sp" data-pad="32">HP</button>
       <button class="wk" data-pad="64">LK</button><button class="sk" data-pad="128">HK</button>
     </div>
+    <div class="p2" aria-label="Player 2 touch controls">
+      <div class="btns">
+        <button class="wp" data-key="Numpad4">LP</button><button class="sp" data-key="Numpad6">HP</button>
+        <button class="wk" data-key="Numpad1">LK</button><button class="sk" data-key="Numpad3">HK</button>
+      </div>
+      <div class="dpad" id="dpad2"><i class="u">&#9650;</i><i class="l">&#9664;</i><i class="r">&#9654;</i><i class="d">&#9660;</i></div>
+    </div>
   </div>
   <div id="help">
     <b>Player 1:</b> move <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> &middot; punch <kbd>U</kbd> / <kbd>O</kbd> &middot; kick <kbd>J</kbd> / <kbd>L</kbd>
     &nbsp;&nbsp;<b>Player 2:</b> arrows &middot; punch <kbd>Num4</kbd> / <kbd>Num6</kbd> &middot; kick <kbd>Num1</kbd> / <kbd>Num3</kbd>
-    &nbsp;&nbsp;<kbd>Enter</kbd> start &middot; <kbd>Esc</kbd> pause &middot; gamepads work too
+    &nbsp;&nbsp;<kbd>Enter</kbd> start &middot; <kbd>Esc</kbd> pause &middot; gamepads work too &middot; <a href="../" id="toMenu2">All games</a>
   </div>
   <div id="overlay">
     <h1>SHOGUN II</h1>
@@ -90,7 +131,7 @@
     <p id="msg"></p>
   </div>
 </div>
-<script src="host.js?v=9"></script>
+<script src="host.js?v=10"></script>
 <script>
 (async () => {
   const canvas = document.getElementById('screen');
@@ -104,33 +145,76 @@
 
   function fit() {
     const stage = document.getElementById('stage');
-    const w = stage.clientWidth - 16, h = stage.clientHeight - 16;
+    const pad = isTouch ? 4 : 16;
+    const w = stage.clientWidth - pad, h = stage.clientHeight - pad;
     // 320x200 was shown on a 4:3 monitor, so pixels are taller than wide
     let cw = w, ch = w * 3 / 4;
     if (ch > h) { ch = h; cw = h * 4 / 3; }
     canvas.style.width = Math.floor(cw) + 'px';
     canvas.style.height = Math.floor(ch) + 'px';
   }
-  addEventListener('resize', fit); fit();
+  addEventListener('resize', fit); addEventListener('orientationchange', () => setTimeout(fit, 200));
+  if (window.visualViewport) visualViewport.addEventListener('resize', fit);
+  fit();
 
-  // touch controls
-  for (const b of document.querySelectorAll('#touch button')) {
+  // touch controls: action buttons, and one d-pad you can roll your thumb around
+  for (const b of document.querySelectorAll('#touch button[data-pad], #touch button[data-key]')) {
     const down = e => { e.preventDefault(); b.classList.add('on'); KOF.audio();
-      if (b.dataset.pad) { const v = +b.dataset.pad; for (const bit of [1,2,4,8,16,32,64,128]) if (v & bit) KOF.touchPad(bit, true); }
-      else KOF.setKey(b.dataset.key, true); };
+      if (b.dataset.pad) KOF.touchPad(+b.dataset.pad, true); else KOF.setKey(b.dataset.key, true); };
     const up = e => { e.preventDefault(); b.classList.remove('on');
-      if (b.dataset.pad) { const v = +b.dataset.pad; for (const bit of [1,2,4,8,16,32,64,128]) if (v & bit) KOF.touchPad(bit, false); }
-      else KOF.setKey(b.dataset.key, false); };
+      if (b.dataset.pad) KOF.touchPad(+b.dataset.pad, false); else KOF.setKey(b.dataset.key, false); };
     b.addEventListener('pointerdown', down);
     b.addEventListener('pointerup', up);
     b.addEventListener('pointercancel', up);
     b.addEventListener('pointerleave', up);
   }
+  // d-pads you can roll your thumb around: player 1 drives the touch pad bits,
+  // player 2 presses the arrow keys the engine reads for the second player
+  const P2KEYS = { 1: 'ArrowLeft', 2: 'ArrowRight', 4: 'ArrowUp', 8: 'ArrowDown' };
+  function bindDpad(dpad, send) {
+    let dirBits = 0, dpadId = null;
+    const arrows = { 1: dpad.querySelector('.l'), 2: dpad.querySelector('.r'), 4: dpad.querySelector('.u'), 8: dpad.querySelector('.d') };
+    function setDir(bits) {
+      for (const bit of [1, 2, 4, 8]) {
+        const on = !!(bits & bit);
+        if (on !== !!(dirBits & bit)) send(bit, on);
+        arrows[bit].classList.toggle('on', on);
+      }
+      dirBits = bits;
+    }
+    function dirFrom(e) {
+      const r = dpad.getBoundingClientRect();
+      const dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2);
+      if (Math.hypot(dx, dy) < r.width * 0.14) return 0;          // dead zone in the middle
+      const a = Math.atan2(dy, dx) * 180 / Math.PI;               // 8 directions, 45 degrees each
+      const s = Math.round(a / 45);
+      return { 0: 2, 1: 2 | 8, 2: 8, 3: 1 | 8, 4: 1, '-4': 1, '-3': 1 | 4, '-2': 4, '-1': 2 | 4 }[s] || 0;
+    }
+    dpad.addEventListener('pointerdown', e => { e.preventDefault(); KOF.audio(); dpadId = e.pointerId; dpad.setPointerCapture(e.pointerId); setDir(dirFrom(e)); });
+    dpad.addEventListener('pointermove', e => { if (e.pointerId === dpadId) setDir(dirFrom(e)); });
+    const dpadUp = e => { if (e.pointerId === dpadId) { dpadId = null; setDir(0); } };
+    dpad.addEventListener('pointerup', dpadUp);
+    dpad.addEventListener('pointercancel', dpadUp);
+  }
+  bindDpad(document.getElementById('dpad'), (bit, on) => KOF.touchPad(bit, on));
+  bindDpad(document.getElementById('dpad2'), (bit, on) => KOF.setKey(P2KEYS[bit], on));
+  const twoP = document.getElementById('twoP');
+  twoP.addEventListener('click', () => {
+    const on = document.body.classList.toggle('two');
+    twoP.setAttribute('aria-pressed', on); twoP.classList.toggle('on', on); fit();
+  });
+  // back to the Shogun Classics menu (the folder above this game)
+  for (const a of [document.getElementById('toMenu'), document.getElementById('toMenu2')]) a.addEventListener('click', e => {
+    let same = false;
+    try { same = !!document.referrer && new URL(document.referrer).origin === location.origin && history.length > 1; } catch (err) {}
+    if (same) { e.preventDefault(); history.back(); }
+  });
+  document.addEventListener('contextmenu', e => e.preventDefault());
 
   let wasm, files;
   try {
-    const wasmP = fetch('kof91.wasm?v=9').then(r => { if (!r.ok) throw new Error('kof91.wasm missing'); return r.arrayBuffer(); });
-    files = await KOF.loadPak(['shogun2-data-1.wasm?v=9', 'shogun2-data-2.wasm?v=9'], f => bar.style.width = Math.round(f * 100) + '%');
+    const wasmP = fetch('kof91.wasm?v=10').then(r => { if (!r.ok) throw new Error('kof91.wasm missing'); return r.arrayBuffer(); });
+    files = await KOF.loadPak(['shogun2-data-1.wasm?v=10', 'shogun2-data-2.wasm?v=10'], f => bar.style.width = Math.round(f * 100) + '%');
     wasm = await wasmP;
   } catch (e) {
     msg.textContent = 'Could not load the game files: ' + e.message;

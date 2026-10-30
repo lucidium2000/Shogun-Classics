@@ -85,11 +85,16 @@ const Input = (() => {
 
   /* -------------------------------------------------------------- touch */
   I.bindTouch = function (root) {
-    const pad = root.querySelector('#dpad'), knob = root.querySelector('#knob');
+    bindSet(root, 0, '#dpad', '#knob', '#btnP', '#btnSP');
+    bindSet(root, 1, '#dpad2', '#knob2', '#btnP2', '#btnSP2');
+    root.querySelector('#btnPause').addEventListener('pointerdown', e => { e.preventDefault(); I.menu.push({ m: 'pause' }); });
+  };
+  function bindSet(root, pi, padSel, knobSel, pSel, spSel) {
+    const pad = root.querySelector(padSel), knob = root.querySelector(knobSel);
     let pid = null, cur = '';
     const setDir = (dir) => {
-      for (const b of ['l', 'r', 'u', 'd']) if (dir.includes(b) && !cur.includes(b)) press(0, b, 2);
-      for (const b of ['l', 'r', 'u', 'd']) if (!dir.includes(b) && cur.includes(b)) release(0, b, 2);
+      for (const b of ['l', 'r', 'u', 'd']) if (dir.includes(b) && !cur.includes(b)) press(pi, b, 2);
+      for (const b of ['l', 'r', 'u', 'd']) if (!dir.includes(b) && cur.includes(b)) release(pi, b, 2);
       cur = dir;
     };
     const move = (e) => {
@@ -111,13 +116,12 @@ const Input = (() => {
       if (Math.hypot(dx, dy) < r.width * 0.11) return;
       I.menu.push({ m: Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up') });
     }
-    for (const [id, b] of [['btnP', 'p'], ['btnSP', 'sp']]) {
-      const el = root.querySelector('#' + id);
-      el.addEventListener('pointerdown', e => { e.preventDefault(); I.touch = true; el.classList.add('on'); press(0, b, 2); if (b === 'p') I.menu.push({ m: 'ok', touch: true }); });
-      const up = () => { el.classList.remove('on'); release(0, b, 2); };
+    for (const [sel, b] of [[pSel, 'p'], [spSel, 'sp']]) {
+      const el = root.querySelector(sel);
+      el.addEventListener('pointerdown', e => { e.preventDefault(); I.touch = true; el.classList.add('on'); press(pi, b, 2); if (b === 'p') I.menu.push({ m: 'ok', touch: true }); });
+      const up = () => { el.classList.remove('on'); release(pi, b, 2); };
       el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up); el.addEventListener('pointerleave', up);
     }
-    root.querySelector('#btnPause').addEventListener('pointerdown', e => { e.preventDefault(); I.menu.push({ m: 'pause' }); });
-  };
+  }
   return I;
 })();

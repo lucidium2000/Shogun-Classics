@@ -30,6 +30,7 @@ const Rig = (() => {
     kickS: P({ lean: -6, head: -4, shF: 40, elF: 96, shB: 14, elB: 100, hipF: 70, knF: -110, hipB: -8, knB: -4 }),
     kickH: P({ lean: -22, head: 2, shF: 50, elF: 90, shB: -30, elB: 60, hipF: 96, knF: -4, hipB: -10, knB: -4, rootX: 4 }),
     sweepS: P({ lean: 30, head: -10, shF: 30, elF: 80, shB: 40, elB: 60, hipF: 70, knF: -120, hipB: 20, knB: -120 }),
+    wheel: P({ lean: 0, head: 0, shF: -170, elF: 0, shB: -150, elB: 0, hipF: 40, knF: 0, hipB: -40, knB: 0 }),
     sweepH: P({ lean: 36, head: -10, shF: 20, elF: 60, shB: 60, elB: 30, hipF: 86, knF: -6, hipB: 50, knB: -140 }),
     hitHi: P({ lean: -22, head: -26, shF: -20, elF: 60, shB: -30, elB: 70, hipF: 10, knF: -10, hipB: -14, knB: -12, rootX: -6 }),
     hitLo: P({ lean: 30, head: 18, shF: 20, elF: 50, shB: 10, elB: 60, hipF: 20, knF: -30, hipB: -20, knB: -20 }),

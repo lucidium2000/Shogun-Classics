@@ -25,7 +25,9 @@ const DEFS = {
       kick: { dmg: 1, st: 0.42, act: 0.12, rec: 0.42, reach: 124, type: 'low', p: ['kickS', 'kickH'], sfx: 'heavy' } } },
   yamana: { walk: 140, idle: ['yIdle', 'yIdle2'], victory: 'yIdle', think: 0.42, aggro: 0.5, armorAt: 3, acrobat: true,
     moves: { hit: { dmg: 2, st: 0.32, act: 0.12, rec: 0.42, reach: 190, type: 'high', p: ['staffS', 'staffH'], sfx: 'heavy', whoosh: true },
-      kick: { dmg: 1, st: 0.3, act: 0.12, rec: 0.36, reach: 128, type: 'low', p: ['sweepS', 'sweepH'], sfx: 'punch' } } },
+      kick: { dmg: 1, st: 0.3, act: 0.12, rec: 0.36, reach: 128, type: 'low', p: ['sweepS', 'sweepH'], sfx: 'punch' },
+      // EHIT3 in SHOGUN.BAS: Yamana cartwheels across the screen into you (damage 2)
+      wheel: { dmg: 2, reach: 96, type: 'high', sfx: 'heavy' } } },
   frill: { walk: 125, idle: ['fIdle', 'fIdle2'], victory: 'fIdle', think: 0.32, aggro: 0.75, armorAt: 2, frill: true,
     moves: { hit: { dmg: 1.5, st: 0.24, act: 0.1, rec: 0.3, reach: 114, type: 'high', p: ['punchS', 'punchH'], sfx: 'heavy' },
       kick: { dmg: 2, st: 0.28, act: 0.12, rec: 0.34, reach: 126, type: 'low', p: ['kickS', 'kickH'], sfx: 'heavy' } } },
@@ -46,7 +48,7 @@ class Fighter {
     this.trail = [];
   }
   get s() { return this.look.s; }
-  set(state, target, speed) { this.armor = false; this.state = state; this.t = 0; if (target) this.target = target; if (speed) this.speed = speed; this.hitDone = false; }
+  set(state, target, speed) { if (this.state === 'wheel' && state !== 'wheel') this.pose.rot = 0; this.armor = false; this.state = state; this.t = 0; if (target) this.target = target; if (speed) this.speed = speed; this.hitDone = false; }
   idlePose() { return this.def.idle[(Math.floor(performance.now() / 700 + this.x) % 2 + 2) % 2]; }
   canAct() { return ['idle', 'walk', 'block', 'crouch'].includes(this.state); }
 
@@ -118,9 +120,15 @@ class Fighter {
     const roll = Math.floor(Math.random() * (D.frill ? 4 : 6));
     const pick = roll === 1 || roll === 2 ? 'hit' : roll === 0 ? 'kick' : null;
     if (Math.random() < 0.5) this.plan = Math.random() < 2 / 3 ? 'hit' : 'kick';
+    if (D.moves.wheel && pick === 'hit' && dist > 150 && dist < 420 && Math.random() < 0.6) return this.cartwheel(dist);
     if (!pick || dist > D.moves[pick].reach + 4) return;
     if (D.frill && foe.state === 'crouch' && Math.random() < 0.6) return this.attack('kick');
     this.attack(pick);
+  }
+  cartwheel(dist) {
+    this.set('wheel', 'wheel', 16); this.taken = 0;
+    this.vx = this.face * Math.max(240, (dist - 50) / 0.62);   // lands right in front of you
+    setTimeout(() => Audio.sfx('whoosh'), 120);
   }
   attack(name, fast) {
     const m = this.def.moves[name]; this.taken = 0;
@@ -171,6 +179,13 @@ class Fighter {
       case 'down': if (!this.ko && this.t > 0.55) this.set('getup', 'getUp', 6); break;
       case 'getup': if (this.t > 0.35) this.set('idle', this.def.idle[0], 6); break;
       case 'dizzy': { const w = Math.sin(G.time * 3); this.target = 'dizzy'; this.speed = 4; this.pose.lean += w * 0.25; this.pose.head += w * 0.5; break; }
+      case 'wheel': {
+        const k = Math.min(1, this.t / 0.62);
+        this.pose.rot = 360 * k; this.target = 'wheel'; this.speed = 16;
+        if (k > 0.45 && !this.hitDone) G.tryHit(this, foe, this.def.moves.wheel);
+        if (k >= 1) { this.pose.rot = 0; this.vx = 0; this.set('idle', this.def.idle[0], 10); }
+        break;
+      }
       case 'flip': this.pose.rot -= dt * 900; if (this.grounded) { this.pose.rot = 0; this.set('idle', this.def.idle[0], 10); } break;
     }
     // physics
@@ -184,11 +199,11 @@ class Fighter {
       }
     } else {
       this.x += this.vx * dt;
-      if (!['walk', 'block', 'dash'].includes(this.state) || (this.state === 'dash' && this.t >= 0.42)) this.vx *= Math.exp(-9 * dt);
+      if (!['walk', 'block', 'dash', 'wheel'].includes(this.state) || (this.state === 'dash' && this.t >= 0.42)) this.vx *= Math.exp(-9 * dt);
     }
     if (this.state === 'down' && !this.scripted) this.pose.rot += (-88 - this.pose.rot) * Math.min(1, dt * 12);
     const tgt = P[this.target] || P.idle;
-    Rig.lerpPose(this.pose, tgt, Math.min(1, dt * this.speed), this.state === 'launch' || this.state === 'flip' || this.state === 'down' || this.freeRot);
+    Rig.lerpPose(this.pose, tgt, Math.min(1, dt * this.speed), this.state === 'launch' || this.state === 'flip' || this.state === 'wheel' || this.state === 'down' || this.freeRot);
   }
 
   /* -------------------------------------------------------- render */

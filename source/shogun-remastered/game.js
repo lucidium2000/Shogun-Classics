@@ -156,7 +156,8 @@ const Title = {
     return [['1 PLAYER', () => { G.mode = '1p'; Input.twoP = false; go(Select); }],
       ['2 PLAYERS', () => { G.mode = '2p'; Input.twoP = true; go(Select); }],
       ['HOW TO PLAY', () => go(Help, Title)],
-      ['OPTIONS', () => go(Options, Title)]];
+      ['OPTIONS', () => go(Options, Title)],
+      ['ALL GAMES', toMenu]];
   },
   update(dt, evs) {
     this.t += dt;
@@ -185,7 +186,8 @@ const Title = {
       hits.push({ x: 0, y: 0, w: W, h: H, on: () => {} });
     } else {
       text('(1) OR (2) PLAYERS', W / 2, 372, 22, '#55ffff', { font: FONT.dos, weight: 400 });
-      this.items().forEach(([l, on], i) => button(l, 190 + i * 193, 430, 178, 46, on, i === this.sel));
+      const it = this.items(), gap = Math.min(193, (W - 40) / it.length);
+      it.forEach(([l, on], i) => button(l, W / 2 + (i - (it.length - 1) / 2) * gap, 430, gap - 15, 46, on, i === this.sel));
     }
     text('MYSTICAL SOFTWARE (C)1995-1996  ·  REMASTERED 2026', W / 2, 515, 16, '#5c8c8c', { font: FONT.dos, weight: 400, spacing: 1 });
   },
@@ -683,7 +685,8 @@ const Pause = {
   list() {
     return [['RESUME', () => { G.paused = false; }], ['HOW TO PLAY', () => { go(Help, 'pause'); G.paused = false; }],
       [`SOUND: ${soundPref ? 'ON' : 'OFF'}`, () => { soundPref = !soundPref; Audio.setOn(soundPref); store.set('sound', soundPref); }],
-      ['QUIT TO TITLE', () => { G.paused = false; Input.twoP = false; go(Title); }]];
+      ['QUIT TO TITLE', () => { G.paused = false; Input.twoP = false; go(Title); }],
+      ['ALL GAMES', toMenu]];
   },
   update(dt, evs) { if (evs.some(e => e.m === 'pause' || e.m === 'back')) { G.paused = false; return; } const l = this.list(); this.sel = menuNav(l, this.sel, evs, i => l[i][1]()); },
   draw() {
@@ -869,10 +872,21 @@ cv.addEventListener('pointerdown', e => {
 });
 addEventListener('touchstart', () => { Input.touch = true; document.body.classList.add('touch'); }, { passive: true });
 
+// back to the Shogun Classics menu (the folder above this game)
+function toMenu(e) {
+  if (e && e.preventDefault) e.preventDefault();
+  let same = false;
+  try { same = !!document.referrer && new URL(document.referrer).origin === location.origin && history.length > 1; } catch (err) {}
+  if (same) history.back(); else location.href = '../';
+}
+document.getElementById('btnMenu').addEventListener('click', toMenu);
+
 function frame(now) {
   const dt = Math.min(0.05, (now - last) / 1000); last = now;
   G.time += dt; G.frameDt = dt;
   Input.pollPads();
+  document.body.classList.toggle('two', Input.twoP);
+  document.body.classList.toggle('front', G.scene === Title || G.scene === Power);   // corner MENU link only on the title screens
   const evs = Input.takeMenu();
   try {
     G.scene.update(dt, evs);

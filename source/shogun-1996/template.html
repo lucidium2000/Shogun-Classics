@@ -45,6 +45,7 @@ header { display: flex; flex-wrap: wrap; align-items: baseline; justify-content:
   background: var(--bezel); border: 0; padding: 4px 11px; cursor: pointer;
 }
 .btn { border: 1px solid var(--bezel-edge); border-radius: 6px; }
+a.btn { text-decoration: none; display: inline-block; }
 .seg button + button { border-left: 1px solid var(--bezel-edge); }
 .seg button[aria-pressed="true"] { background: var(--red); color: #fff; }
 .seg button:hover, .btn:hover { background: var(--key-hi); }
@@ -80,6 +81,18 @@ button:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
 .console .led.wait { background: var(--amber); box-shadow: 0 0 8px var(--amber); }
 #hint { color: var(--ink); }
 
+/* one-tap fatalities, shown over the bottom of the screen at FINISH HIM */
+.fatal { position: absolute; left: 0; right: 0; bottom: 0; z-index: 3; display: grid; justify-items: center; gap: 8px;
+  padding: 26px 10px 12px; line-height: 1.1; background: linear-gradient(rgba(0,0,0,0), rgba(0,0,0,0.88) 38%); }
+.fatal-title { font-family: var(--font-display); font-size: 22px; letter-spacing: 0.24em; color: var(--red); text-shadow: 0 0 10px rgba(195,58,44,0.6); }
+.fatal-btns { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.fatal-btns button { font-family: var(--font-display); color: #fff; background: #5c1610; border: 1px solid #a3352a; border-bottom-width: 3px;
+  border-radius: 7px; padding: 6px 14px 4px; cursor: pointer; display: grid; gap: 1px; justify-items: center; touch-action: manipulation; }
+.fatal-btns button b { font-weight: 400; font-size: 24px; letter-spacing: 0.1em; }
+.fatal-btns button small { font-size: 15px; letter-spacing: 0.08em; color: #f0b3a9; }
+.fatal-btns button:hover, .fatal-btns button:active { background: #7a1d14; }
+.fatal-note { font-family: var(--font-body); font-size: 12px; color: var(--dim); text-align: center; max-width: 48ch; }
+
 .pad { display: grid; grid-template-columns: auto auto; justify-content: center; gap: 14px 22px; margin-top: 14px; }
 .numpad { display: grid; grid-template-columns: repeat(3, 62px); grid-auto-rows: 56px; gap: 7px; }
 .actions { display: grid; grid-template-columns: repeat(2, 78px); grid-auto-rows: 56px; gap: 7px; }
@@ -95,6 +108,25 @@ button:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
 .key.punch { grid-column: span 2; grid-row: span 2; background: #3a1714; border-color: #5a2520; font-size: 30px; }
 .key.punch small { color: #f0a59b; }
 .key.enter { grid-column: span 2; }
+.key.cheat { font-size: 22px; }
+.key.cheat small { font-size: 12px; }
+
+/* phone held sideways: screen on the left, keys on the right, both on one screen */
+@media (orientation: landscape) and (max-height: 560px) {
+  body { padding-block: 8px 24px; }
+  .bezel { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-rows: auto 1fr; column-gap: 12px; padding: 8px; border-radius: 12px; }
+  .tube { grid-row: 1 / 3; align-self: center; }
+  .tube canvas { width: auto; height: calc(100dvh - 36px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); max-width: 62vw; object-fit: contain; }
+  .console { margin-top: 0; font-size: 16px; }
+  .pad { margin-top: 6px; gap: 8px; align-self: start; }
+  .numpad { grid-template-columns: repeat(3, 44px); grid-auto-rows: 40px; gap: 5px; }
+  .actions { grid-template-columns: repeat(2, 54px); grid-auto-rows: 40px; gap: 5px; }
+  .key { font-size: 21px; } .key small { font-size: 11px; } .key.punch { font-size: 22px; }
+  .fatal { padding: 18px 6px 8px; gap: 5px; }
+  .fatal-title { font-size: 18px; }
+  .fatal-btns button { padding: 4px 10px 3px; } .fatal-btns button b { font-size: 20px; }
+  .fatal-note { display: none; }
+}
 
 .notes { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 18px 34px; }
 .notes h2 { font-family: var(--font-display); font-weight: 400; font-size: 28px; letter-spacing: 0.12em; color: var(--cyan); margin: 0 0 8px; text-wrap: balance; }
@@ -130,6 +162,7 @@ details li, .notes li { margin-bottom: 5px; }
       <span class="sub">SHOTAKAN TAKAMARA · <b>MYSTICAL SOFTWARE</b> · 1996</span>
     </div>
     <div class="toolbar">
+      <a class="btn" id="toMenu" href="../">&#9664; All games</a>
       <span class="group"><span class="tool-label">Version</span>
       <div class="seg" id="ver">
         <button type="button" id="ver-restored" data-v="restored">Restored</button>
@@ -156,6 +189,11 @@ details li, .notes li { margin-bottom: 5px; }
           <span class="fine">The 1996 QBasic code, running as it was written. Turn sound up.</span>
         </span>
       </button>
+      <div class="fatal" id="fatal" hidden>
+        <span class="fatal-title" id="fatalTitle">FINISH HIM!</span>
+        <div class="fatal-btns" id="fatalBtns"></div>
+        <span class="fatal-note" id="fatalNote">Tap a fatality, or type its code on the number keys and press ENTER.</span>
+      </div>
     </div>
     <div class="console">
       <span><span class="led" id="led"></span><span id="file">C:\SHOGUN\SHOGUN.BAS</span></span>
@@ -180,6 +218,8 @@ details li, .notes li { margin-bottom: 5px; }
         <button type="button" class="key" data-k="s">S<small>SHO'KI</small></button>
         <button type="button" class="key punch" data-k=" ">SPACE<small>PUNCH</small></button>
         <button type="button" class="key enter" data-k="\r">ENTER</button>
+        <button type="button" class="key cheat" data-k="&gt;">&gt;<small>KEERO SKIP</small></button>
+        <button type="button" class="key cheat" data-k="&lt;">&lt;<small>SHO'KI SKIP</small></button>
       </div>
     </div>
   </section>
@@ -283,8 +323,16 @@ const FONT = Uint8Array.from(atob("/*FONT*/"), c => c.charCodeAt(0));
     if (started) return;
     started = true; $('power').hidden = true;
     vm.boot('SHOGUN');
+    // on a phone, bring the screen and keys into view together
+    if (matchMedia('(pointer: coarse)').matches) $('scr').closest('.bezel').scrollIntoView({ block: 'start', behavior: 'smooth' });
   };
   $('power').addEventListener('click', start);
+  // back to the Shogun Classics menu (the folder above this game)
+  $('toMenu').addEventListener('click', e => {
+    let same = false;
+    try { same = !!document.referrer && new URL(document.referrer).origin === location.origin && history.length > 1; } catch (err) {}
+    if (same) { e.preventDefault(); history.back(); }
+  });
   $('reset').addEventListener('click', () => { speaker.unlock(); vm.cache.clear(); if (!started) start(); else vm.boot('SHOGUN'); });
   $('snd').addEventListener('click', () => { speaker.on = !speaker.on; if (!speaker.on) speaker.reset(); setPressed(); });
   document.querySelectorAll('#ver button').forEach(b => b.addEventListener('click', () => {
@@ -318,11 +366,64 @@ const FONT = Uint8Array.from(atob("/*FONT*/"), c => c.charCodeAt(0));
     press(ch);
   });
 
+  // One-tap fatalities. The 1996 codes are numpad moves typed at FINISH HIM:
+  // a key leaves the FINISH HIM screen, then INPUT FT$ reads the code.
+  const FATALS = {
+    "WAN'FU": { KEERO: [['668', 'HEAD TAKER'], ['246', 'THE PIT']], "SHO'KI": [['6264', 'RUN-THROUGH'], ['468', 'THE PIT']] },
+    YAMANA: { KEERO: [['668', 'HEAD TAKER'], ['4655', 'SECRET PIT']], "SHO'KI": [['6264', 'RUN-THROUGH'], ['4655', 'SECRET PIT']] },
+    FRILL: { KEERO: [['668', 'HEAD TAKER'], ['46', 'SHOGUN STRIKE']], "SHO'KI": [['46', 'SHOGUN STRIKE']] },
+  };
+  const ARROW = { 8: '\u2191', 2: '\u2193', 4: '\u2190', 6: '\u2192' };
+  const fatalEl = $('fatal'), fatalBtns = $('fatalBtns');
+  let fatalKey = '', scanAt = 0, seenAt = 0;
+  const screenText = () => { let s = ''; for (const c of screen.chars) s += c < 128 ? String.fromCharCode(c) : ' '; return s; };
+  const doFatal = code => {
+    speaker.unlock();
+    vm.keys.length = 0;                         // drop mashed punches still waiting in the keyboard buffer
+    const typing = vm.state === 'input' && vm.inputOp && vm.inputOp.targets[0].key === 'FT$';
+    if (typing) vm.inputBuf = '';             // replace whatever was typed so far
+    else vm.pushKey(' ');                       // leaves the FINISH HIM screen for the code prompt
+    for (const ch of code) vm.pushKey(ch);
+    vm.pushKey('\r');
+    fatalEl.hidden = true; fatalKey = 'used';
+  };
+  const scanFatal = () => {
+    if (!started || vm.state === 'ended' || vm.state === 'error') { fatalEl.hidden = true; fatalKey = ''; return; }
+    const txt = screenText();
+    // the FINISH HIM screen redraws itself, so only hide after it has been gone a moment
+    if (!txt.includes('F I N I S H')) { if (performance.now() - seenAt > 700) { fatalEl.hidden = true; fatalKey = ''; } return; }
+    seenAt = performance.now();
+    if (fatalKey === 'used') return;
+    const foe = ["WAN'FU", 'YAMANA', 'FRILL'].find(n => txt.includes(n));
+    let pn = '';
+    try { pn = String(vm.getVar('PN$') || ''); } catch (e) {}
+    if (!pn) pn = txt.includes("SHO'KI") ? "SHO'KI" : 'KEERO';
+    const list = foe && FATALS[foe][pn];
+    if (!list) { fatalEl.hidden = true; return; }
+    const key = foe + pn;
+    if (key !== fatalKey) {
+      fatalKey = key;
+      $('fatalTitle').textContent = foe === 'FRILL' ? 'FINISH HER!' : 'FINISH HIM!';
+      fatalBtns.replaceChildren(...list.map(([code, name]) => {
+        const b = document.createElement('button'); b.type = 'button';
+        b.innerHTML = `<b>${code} ${[...code].map(d => ARROW[d]).join('')}</b><small>${name}</small>`;
+        b.addEventListener('pointerdown', e => { e.preventDefault(); doFatal(code); });
+        b.addEventListener('click', e => { if (e.detail === 0) doFatal(code); });   // keyboard activation
+        return b;
+      }));
+      $('fatalNote').textContent = version === 'restored'
+        ? 'Tap a fatality, or type its code on the number keys and press ENTER.'
+        : 'Original 1996 files: some of these codes never worked, because of a bug the Restored version fixes.';
+    }
+    fatalEl.hidden = false;
+  };
+
   let last = performance.now(), shownBuf = '';
   const frame = now => {
     const dt = Math.min(0.1, (now - last) / 1000); last = now;
     if (started) { vm.tick(dt); if (vm.state === 'input' && vm.inputBuf !== shownBuf) { shownBuf = vm.inputBuf; updateHint(); } }
     screen.render();
+    if (now - scanAt > 150) { scanAt = now; scanFatal(); }
     requestAnimationFrame(frame);
   };
   requestAnimationFrame(frame);
