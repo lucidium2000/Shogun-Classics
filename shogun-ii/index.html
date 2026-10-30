@@ -204,7 +204,10 @@
     twoP.setAttribute('aria-pressed', on); twoP.classList.toggle('on', on); fit();
   });
   // back to the Shogun Classics menu (the folder above this game)
+  // opened from the collection menu: the menu page holds full screen and takes us back
+  const inMenu = (() => { try { return parent !== window && parent.location.origin === location.origin; } catch (e) { return false; } })();
   for (const a of [document.getElementById('toMenu'), document.getElementById('toMenu2')]) a.addEventListener('click', e => {
+    if (inMenu) { e.preventDefault(); parent.postMessage('shogun:menu', location.origin); return; }
     let same = false;
     try { same = !!document.referrer && new URL(document.referrer).origin === location.origin && history.length > 1; } catch (err) {}
     if (same) { e.preventDefault(); history.back(); }
@@ -228,6 +231,7 @@
 
   // phones: go full screen when the player taps PRESS START
   function goFull() {
+    if (inMenu) { parent.postMessage('shogun:full', location.origin); return; }
     const d = document.documentElement, fs = d.requestFullscreen || d.webkitRequestFullscreen;
     if (!matchMedia('(pointer: coarse)').matches || !fs || document.fullscreenElement || document.webkitFullscreenElement) return;
     try { const r = fs.call(d); if (r && r.catch) r.catch(() => {}); } catch (e) {}

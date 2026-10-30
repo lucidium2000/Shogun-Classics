@@ -176,7 +176,7 @@ body.play #opts { display: grid; place-items: center; position: fixed; z-index: 
   width: 38px; height: 38px; border-radius: 8px; border: 1px solid var(--bezel-edge); background: rgba(27, 26, 31, 0.7); color: var(--ink);
   font-family: var(--font-display); font-size: 22px; cursor: pointer; }
 body.play .bezel { position: fixed; inset: 0; z-index: 1; border: 0; border-radius: 0; padding: 0; box-shadow: none; background: #000; display: block; }
-body.play .tube { position: absolute; inset: 0; border-radius: 0; }
+body.play .tube { position: absolute; inset: 0; border-radius: 0; align-self: stretch; }
 body.play .tube canvas { width: 100%; height: 100%; max-width: none; object-fit: contain; object-position: center top; }
 body.play .tube::after { display: none; }
 body.play .pad { position: fixed; z-index: 5; left: 0; right: 0; bottom: 0; margin: 0; display: flex; justify-content: space-between; align-items: flex-end;
@@ -253,23 +253,21 @@ body.play .fatal { position: fixed; z-index: 6; left: 50%; transform: translateX
     </div>
     <div class="pad" id="pad" aria-label="On-screen keys">
       <div class="numpad">
-        <button type="button" class="key" data-k="7">7</button>
+        <span></span>
         <button type="button" class="key mv" data-k="8">8<small>JUMP</small></button>
-        <button type="button" class="key" data-k="9">9</button>
+        <span></span>
         <button type="button" class="key mv" data-k="4">4<small>BLOCK</small></button>
-        <button type="button" class="key" data-k="5">5</button>
+        <span></span>
         <button type="button" class="key mv" data-k="6">6<small>FWD</small></button>
-        <button type="button" class="key" data-k="1">1</button>
+        <span></span>
         <button type="button" class="key mv" data-k="2">2<small>DUCK</small></button>
-        <button type="button" class="key" data-k="3">3</button>
-        <button type="button" class="key wide" data-k="0">0<small>REDRAW</small></button>
-        <button type="button" class="key" data-k="\b">⌫</button>
+        <span></span>
       </div>
       <div class="actions">
         <button type="button" class="key" data-k="k">K<small>KEERO</small></button>
         <button type="button" class="key" data-k="s">S<small>SHO'KI</small></button>
         <button type="button" class="key punch" data-k=" ">SPACE<small>PUNCH</small></button>
-        <button type="button" class="key enter" data-k="\r">ENTER</button>
+        <button type="button" class="key enter" data-k="\r">START</button>
         <button type="button" class="key cheat" data-k="&gt;">&gt;<small>KEERO SKIP</small></button>
         <button type="button" class="key cheat" data-k="&lt;">&lt;<small>SHO'KI SKIP</small></button>
       </div>
@@ -287,7 +285,7 @@ body.play .fatal { position: fixed; z-index: 6; left: 50%; transform: translateX
         <tr><td><kbd>4</kbd> or <kbd>←</kbd></td><td>Block. <kbd>6</kbd> drops the guard.</td></tr>
         <tr><td>Block, then <kbd>4</kbd><kbd>6</kbd><kbd>6</kbd></td><td>Keero's fireball.</td></tr>
         <tr><td>Block, then <kbd>2</kbd><kbd>6</kbd><kbd>8</kbd></td><td>Sho'ki's sword special.</td></tr>
-        <tr><td><kbd>0</kbd></td><td>Redraw the screen.</td></tr>
+        <tr><td><kbd>0</kbd></td><td>Redraw the screen (keyboard only).</td></tr>
         <tr><td><kbd>Enter</kbd></td><td>Every "PRESS (ENTER)" prompt. The game hides what you type in black, so the hint under the screen tells you when it is listening.</td></tr>
       </table>
       <details>
@@ -5436,13 +5434,17 @@ function patchSource(name, src, mode) {
     const on = document.body.classList.toggle('showopts');
     $('opts').setAttribute('aria-expanded', on); $('opts').innerHTML = on ? '&#10005;' : '&#9776;';
   });
+  // opened from the collection menu: the menu page holds full screen and takes us back
+  const inMenu = (() => { try { return parent !== window && parent.location.origin === location.origin; } catch (e) { return false; } })();
   const goFull = () => {
+    if (inMenu) { parent.postMessage('shogun:full', location.origin); return; }
     const d = document.documentElement, fs = d.requestFullscreen || d.webkitRequestFullscreen;
     if (touchy && fs && !document.fullscreenElement && !document.webkitFullscreenElement) { try { const r = fs.call(d); if (r && r.catch) r.catch(() => {}); } catch (e) {} }
   };
   addEventListener('pointerdown', goFull, { once: true, capture: true });
   // back to the Shogun Classics menu (the folder above this game)
   $('toMenu').addEventListener('click', e => {
+    if (inMenu) { e.preventDefault(); parent.postMessage('shogun:menu', location.origin); return; }
     let same = false;
     try { same = !!document.referrer && new URL(document.referrer).origin === location.origin && history.length > 1; } catch (err) {}
     if (same) { e.preventDefault(); history.back(); }
@@ -5459,7 +5461,15 @@ function patchSource(name, src, mode) {
   }));
 
   document.querySelectorAll('.toolbar button, #power').forEach(b => b.addEventListener('click', () => b.blur()));
-  const press = ch => { if (!started) { start(); return; } speaker.unlock(); vm.pushKey(ch); };
+  // Two-player mode in the original is broken, so it is not offered: at the
+  // "(1) OR (2) PLAYERS" prompt Enter picks one player and 2 does nothing.
+  const onScreen = str => { let t = ''; for (const c of vm.screen.chars) t += c < 128 ? String.fromCharCode(c) : ' '; return t.includes(str); };
+  const press = ch => {
+    if (!started) { start(); return; }
+    speaker.unlock();
+    if ((ch === '\r' || ch === '2') && onScreen('(1) OR (2) PLAYERS')) { if (ch === '2') return; ch = '1'; }
+    vm.pushKey(ch);
+  };
   document.querySelectorAll('.key').forEach(k => {
     const ch = k.dataset.k === '\\r' ? '\r' : k.dataset.k === '\\b' ? '\b' : k.dataset.k;
     k.addEventListener('pointerdown', e => { e.preventDefault(); press(ch); k.classList.add('down'); });

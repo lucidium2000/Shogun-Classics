@@ -2744,7 +2744,10 @@ cv.addEventListener('pointerdown', e => {
 addEventListener('touchstart', () => { Input.touch = true; document.body.classList.add('touch'); }, { passive: true });
 
 // phones: go full screen on the first tap (browsers only allow it from a tap)
+// opened from the collection menu: the menu page holds full screen and takes us back
+const inMenu = (() => { try { return parent !== window && parent.location.origin === location.origin; } catch (e) { return false; } })();
 function goFull() {
+  if (inMenu) { parent.postMessage('shogun:full', location.origin); return; }
   const d = document.documentElement, fs = d.requestFullscreen || d.webkitRequestFullscreen;
   if (!matchMedia('(pointer: coarse)').matches || !fs || document.fullscreenElement || document.webkitFullscreenElement) return;
   try { const r = fs.call(d); if (r && r.catch) r.catch(() => {}); } catch (e) {}
@@ -2754,6 +2757,7 @@ addEventListener('pointerdown', goFull, { once: true, capture: true });
 // back to the Shogun Classics menu (the folder above this game)
 function toMenu(e) {
   if (e && e.preventDefault) e.preventDefault();
+  if (inMenu) { parent.postMessage('shogun:menu', location.origin); return; }
   let same = false;
   try { same = !!document.referrer && new URL(document.referrer).origin === location.origin && history.length > 1; } catch (err) {}
   if (same) history.back(); else location.href = '../';

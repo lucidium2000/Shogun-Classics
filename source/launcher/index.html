@@ -90,6 +90,7 @@ h1 { position: relative; margin: 0; font-family: var(--display); font-weight: 80
 kbd { font-family: var(--pixel); font-size: 18px; color: var(--ink); border: 1px solid var(--line); border-radius: 3px; padding: 0 5px; background: var(--panel); }
 footer { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 18px; color: var(--muted); font-size: 15px; letter-spacing: .04em; text-align: center; }
 footer a { color: var(--ink); }
+#stage { position: fixed; inset: 0; z-index: 50; width: 100%; height: 100%; border: 0; background: #000; display: block; }
 .corner { position: fixed; z-index: 5; top: calc(10px + env(safe-area-inset-top, 0px)); right: max(12px, env(safe-area-inset-right, 0px));
   display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
 .fshint { max-width: 190px; font-size: 14px; line-height: 1.3; text-align: right; color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 4px; padding: 6px 9px; }
@@ -188,8 +189,35 @@ footer a { color: var(--ink); }
     e.preventDefault();
     if (document.body.classList.contains('going')) return;
     pick(games.indexOf(g)); confirm(); g.classList.add('chosen'); document.body.classList.add('going');
-    setTimeout(() => { location.href = g.getAttribute('href'); }, 520);
+    goFull();
+    setTimeout(() => openGame(g), 520);
   }));
+  // games open inside this page, so full screen carries over (a new page would drop it)
+  let stage = null;
+  function openGame(g) {
+    track.pause();
+    stage = document.createElement('iframe');
+    stage.id = 'stage'; stage.allow = 'fullscreen; autoplay; gamepad'; stage.setAttribute('allowfullscreen', '');
+    stage.title = g.querySelector('h2') ? g.querySelector('h2').textContent : 'Game';
+    stage.src = g.getAttribute('href');
+    document.body.appendChild(stage);
+    stage.addEventListener('load', () => { try { stage.contentWindow.focus(); } catch (e) {} });
+    stage.focus();
+    history.pushState({ shogunGame: g.dataset.g }, '');
+  }
+  function closeGame() {
+    if (!stage) return;
+    stage.remove(); stage = null;
+    document.body.classList.remove('going'); games.forEach(g => g.classList.remove('chosen'));
+    games[sel].focus({ preventScroll: true });
+    if (want) play();
+  }
+  addEventListener('popstate', closeGame);
+  addEventListener('message', e => {
+    if (e.origin !== location.origin || !stage || e.source !== stage.contentWindow) return;
+    if (e.data === 'shogun:menu') history.back();
+    else if (e.data === 'shogun:full') goFull(true);
+  });
   addEventListener('pageshow', () => { document.body.classList.remove('going'); games.forEach(g => g.classList.remove('chosen')); });
   games.forEach((g, i) => { g.addEventListener('mouseenter', () => pick(i)); g.addEventListener('focus', () => pick(i)); });
   addEventListener('keydown', e => {
@@ -207,7 +235,7 @@ footer a { color: var(--ink); }
       const was = last[gp.index] || {};
       if (now.l && !was.l) pick(sel - 1, true);
       if (now.r && !was.r) pick(sel + 1, true);
-      if (now.go && !was.go) games[sel].click();
+      if (now.go && !was.go && !stage) games[sel].click();
       last[gp.index] = now;
     }
     raf = requestAnimationFrame(poll);
@@ -215,12 +243,12 @@ footer a { color: var(--ink); }
   addEventListener('gamepadconnected', () => { if (!raf) poll(); });
 
   // phones: go full screen on the first tap
-  function goFull() {
+  function goFull(any) {
     const d = document.documentElement, fs = d.requestFullscreen || d.webkitRequestFullscreen;
-    if (!matchMedia('(pointer: coarse)').matches || !fs || document.fullscreenElement || document.webkitFullscreenElement) return;
+    if ((!any && !matchMedia('(pointer: coarse)').matches) || !fs || document.fullscreenElement || document.webkitFullscreenElement) return;
     try { const r = fs.call(d); if (r && r.catch) r.catch(() => {}); } catch (e) {}
   }
-  addEventListener('pointerdown', goFull, { once: true, capture: true });
+  addEventListener('pointerdown', () => goFull(), { once: true, capture: true });
   // the full-screen button works everywhere the browser allows it
   const fsBtn = document.getElementById('fullscreen'), fsHint = document.getElementById('fshint');
   const isFull = () => !!(document.fullscreenElement || document.webkitFullscreenElement);
