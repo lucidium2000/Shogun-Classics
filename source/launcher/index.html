@@ -408,7 +408,7 @@ footer a { color: var(--ink); }
       if (cheers) { const s = ac.createBufferSource(), g = ac.createGain(); g.gain.value = 1.4; s.buffer = cheers; s.connect(g); g.connect(ac.destination); s.start(); }
     },
   };
-  fetch('sounds/corbin-double.mp3').then(r => r.ok ? r.arrayBuffer() : null).then(b => { const ac = audio(); return b && ac && ac.decodeAudioData(b); }).then(buf => { if (buf) cheers = buf; }).catch(() => {});
+  fetch('sounds/corbin-cheers.mp3').then(r => r.ok ? r.arrayBuffer() : null).then(b => { const ac = audio(); return b && ac && ac.decodeAudioData(b); }).then(buf => { if (buf) cheers = buf; }).catch(() => {});
   confirm = which => {
     if (PICK[which]) { noise(0, 0.12, 0.2); PICK[which](); return; }
     [523, 659, 784, 1047].forEach((f, i) => tone(f, f * 1.01, i * 0.055, 0.09, 'square', 0.14));
