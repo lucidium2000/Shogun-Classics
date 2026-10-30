@@ -5396,6 +5396,25 @@ function patchSource(name, src, mode) {
   const sharpen = () => canvas.classList.toggle('sharp', canvas.clientWidth >= canvas.width);
   window.addEventListener('resize', sharpen);
   const om = screen.onMode; screen.onMode = m => { om(m); sharpen(); };
+  // phones: the game only draws in the top of the screen, so show the top two-thirds, scaled up
+  const SHOW = 2 / 3;
+  const fitPlay = () => {
+    const tube = canvas.parentElement;
+    if (!document.body.classList.contains('play')) return;
+    const ar = (canvas.style.aspectRatio || '640 / 400').split('/').map(Number), ratio = ar[0] / ar[1];
+    const land = innerWidth > innerHeight;
+    tube.style.top = ''; tube.style.height = '';
+    const top = land ? 0 : tube.getBoundingClientRect().top;
+    let w = innerWidth, h = w / ratio;
+    if (h * SHOW > innerHeight - top) { h = (innerHeight - top) / SHOW; w = h * ratio; }
+    const vis = Math.round(h * SHOW);
+    canvas.style.width = w + 'px'; canvas.style.height = h + 'px'; canvas.style.margin = '0 auto';
+    tube.style.height = vis + 'px'; tube.style.bottom = 'auto';
+    if (land) tube.style.top = Math.max(0, (innerHeight - vis) / 2) + 'px';
+    sharpen();
+  };
+  window.addEventListener('resize', fitPlay);
+  const om2 = screen.onMode; screen.onMode = m => { om2(m); fitPlay(); };
   sharpen();
   const vm = new VM(screen, speaker, getSource);
   vm.rate = rate;
@@ -5429,7 +5448,7 @@ function patchSource(name, src, mode) {
   $('power').addEventListener('click', start);
   // phones: full-screen play with the keys over the game
   const touchy = matchMedia('(pointer: coarse)').matches;
-  if (touchy) document.body.classList.add('play');
+  if (touchy) { document.body.classList.add('play'); fitPlay(); }
   $('opts').addEventListener('click', () => {
     const on = document.body.classList.toggle('showopts');
     $('opts').setAttribute('aria-expanded', on); $('opts').innerHTML = on ? '&#10005;' : '&#9776;';
