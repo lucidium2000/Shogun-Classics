@@ -285,6 +285,7 @@ body.play .fatal { position: fixed; z-index: 6; left: 50%; transform: translateX
         <tr><td><kbd>4</kbd> or <kbd>←</kbd></td><td>Block. <kbd>6</kbd> drops the guard.</td></tr>
         <tr><td>Block, then <kbd>4</kbd><kbd>6</kbd><kbd>6</kbd></td><td>Keero's fireball.</td></tr>
         <tr><td>Block, then <kbd>2</kbd><kbd>6</kbd><kbd>8</kbd></td><td>Sho'ki's sword special.</td></tr>
+        <tr><td>Tap a fighter</td><td>On CHOOSE YOUR FIGHTER, tapping Keero or Sho'ki picks them (same as <kbd>K</kbd> or <kbd>S</kbd>).</td></tr>
         <tr><td><kbd>K</kbd> or <kbd>S</kbd> in a fight</td><td>Shortcut: does your hero's special for you.</td></tr>
         <tr><td><kbd>0</kbd></td><td>Redraw the screen (keyboard only).</td></tr>
         <tr><td><kbd>Enter</kbd></td><td>Every "PRESS (ENTER)" prompt. The game hides what you type in black, so the hint under the screen tells you when it is listening.</td></tr>
@@ -5550,6 +5551,14 @@ function patchSource(name, src, mode) {
     k.addEventListener('pointerup', up); k.addEventListener('pointerleave', up); k.addEventListener('pointercancel', up);
   });
 
+  // on CHOOSE YOUR FIGHTER, tapping a fighter's picture picks them (K or S);
+  // Keero stands left of column 28 of the 80-column screen, Sho'ki to the right
+  canvas.addEventListener('pointerdown', e => {
+    if (!started || !onScreen("Press 'K' for Keero")) return;
+    const r = canvas.getBoundingClientRect();
+    e.preventDefault();
+    press((e.clientX - r.left) / r.width < 28.5 / 80 ? 'k' : 's');
+  });
   const KEYMAP = { Enter: '\r', Backspace: '\b', Escape: '\x1b', Tab: '\t',
     ArrowUp: '8', ArrowDown: '2', ArrowLeft: '4', ArrowRight: '6',
     Home: '7', PageUp: '9', End: '1', PageDown: '3', Clear: '5', Insert: '0' };
