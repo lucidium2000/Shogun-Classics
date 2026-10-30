@@ -22,6 +22,11 @@ Those are copyrighted by others, so this public build leaves the lose screen
 silent and replaces the unused MIDI files with silent placeholders. The game's
 music is the Shogun title song and Chris's own tracks.
 
+Fighter images: Keero and Corbin are filmed photos of the Shogun crew. Shōkei,
+Wan'fu, Yamana, Frill and Onikage are AI-generated pictures of fictional people
+that Chris made with Google Gemini and turned into sprites; they are not photos of
+real people.
+
 ## Shogun (1996)
 
 - The text-mode font is built from an 8x16 KOI8 bitmap font from the X11 font
