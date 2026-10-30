@@ -102,8 +102,10 @@ const Rig = (() => {
       shW: 42, waist: 32, limb: 1, weapon: 'katana',
     },
     wanfu: {
-      name: "WAN'FU", s: 1.2, skin: '#7a4f36', gi: null, pants: '#25201e', mawashi: '#5a1712', headS: 1.32, sleeve: 'none', fore: '#55565c', hand: '#7a4f36',
-      belt: '#cbb68a', band: null, hair: '#14100d', hairStyle: 'masked', mask: '#70747b', belly: true,
+      // Shogun II look: horned black oni mask, lacquered dō and sode over a bare tanned frame,
+      // shimenawa rope belt with paper shide, olive shorts, leather bracers, bare shins
+      name: "WAN'FU", s: 1.2, skin: '#a2714f', gi: '#24241f', pants: '#3e3024', shin: '#2a231d', headS: 1.32, sleeve: 'none', fore: '#1f1a16', hand: '#a2714f',
+      belt: '#ddd3b6', rope: true, band: null, hair: '#0e0d0d', hairStyle: 'masked', mask: '#1f1e21', oni: true, horn: '#b8a46c', sode: '#26261f', sodeR: 17, armor: '#5a4630', belly: true,
       shW: 66, waist: 62, limb: 1.45, weapon: null,
     },
     yamana: {
@@ -225,17 +227,17 @@ const Rig = (() => {
     }
     if (lower) {
       segs.push({ c: back(pantsC), f: () => capsule(ctx, J.H, thighR, J.KB, shinR * 1.1) });
-      segs.push({ c: back(pantsC), f: () => capsule(ctx, J.KB, shinR * 1.05, ankle(J.KB, J.FB, s), shinR * 0.85) });
+      segs.push({ c: back(L.shin || pantsC), f: () => capsule(ctx, J.KB, shinR * 1.05, ankle(J.KB, J.FB, s), shinR * 0.85) });
       segs.push({ c: back(L.skin), f: () => foot(ctx, J.FB, J.saB, face, s) });
       segs.push({ c: mid(pantsC), f: () => capsule(ctx, J.H, thighR, J.KF, shinR * 1.1) });
-      segs.push({ c: mid(pantsC), f: () => capsule(ctx, J.KF, shinR * 1.05, ankle(J.KF, J.FF, s), shinR * 0.85) });
+      segs.push({ c: mid(L.shin || pantsC), f: () => capsule(ctx, J.KF, shinR * 1.05, ankle(J.KF, J.FF, s), shinR * 0.85) });
       segs.push({ c: L.skin, f: () => foot(ctx, J.FF, J.saF, face, s) });
     }
     if (upper) {
       segs.push({ c: giC, f: () => torso(ctx, J, L, n), torso: true });
       if (L.mawashi) segs.push({ c: L.mawashi, f: () => mawashi(ctx, J, L, n) });
       if (!opts.noHead) segs.push({ c: L.mask ? L.hair : L.skin, f: () => { ctx.beginPath(); ctx.arc(J.Hd[0], J.Hd[1], Z.hr * s * (L.headS || 1), 0, 7); }, head: true, norim: !!L.mask });
-      if (L.sode) segs.push({ c: L.sode, f: () => { capsule(ctx, J.SF, 12 * s, [J.SF[0] + (J.EF[0] - J.SF[0]) * 0.45, J.SF[1] + (J.EF[1] - J.SF[1]) * 0.45], 13 * s); } });
+      if (L.sode) segs.push({ c: L.sode, f: () => { capsule(ctx, J.SF, (L.sodeR || 12) * s, [J.SF[0] + (J.EF[0] - J.SF[0]) * 0.5, J.SF[1] + (J.EF[1] - J.SF[1]) * 0.5], ((L.sodeR || 12) + 1) * s); } });
       segs.push({ c: L.sleeve === 'none' ? L.skin : (L.robe || giC), f: () => capsule(ctx, J.SF, uaR * 1.08, J.EF, uaR * 0.95) });
       segs.push({ c: L.sleeve === 'full' ? giC : L.fore, f: () => capsule(ctx, J.EF, faR, J.WF, faR * 0.85) });
       segs.push({ c: L.hand, f: () => { ctx.beginPath(); ctx.arc(J.WF[0], J.WF[1], faR * 1.2, 0, 7); } });
@@ -323,9 +325,8 @@ const Rig = (() => {
       ctx.fillStyle = L.belt; const kn = along(0.93, 10); ctx.beginPath(); ctx.arc(kn[0], kn[1], 3.4 * s, 0, 7); ctx.fill();
     }
     if (L.armor) { // lacquered dō: white robe collar, red lacing rows, beads
-      ctx.strokeStyle = L.inner || L.robe; ctx.lineWidth = 5 * s;
       let a = along(0.0, 12), b = along(0.3, 4), c = along(0.0, -4);
-      ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.lineTo(c[0], c[1]); ctx.stroke();
+      if (L.inner || L.robe) { ctx.strokeStyle = L.inner || L.robe; ctx.lineWidth = 5 * s; ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.lineTo(c[0], c[1]); ctx.stroke(); }
       ctx.strokeStyle = L.armor; ctx.lineWidth = 3.2 * s;
       for (const k of [0.4, 0.58, 0.76]) {
         const w = (L.shW * (1 - k * 0.35)) / 2;
@@ -367,7 +368,23 @@ const Rig = (() => {
       ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.lineTo(c[0], c[1]); ctx.stroke();
     }
     // belt across the hips
-    if (L.belt) {
+    if (L.rope) { // shimenawa: a fat twisted straw rope with zigzag paper shide hanging in front
+      const w = L.waist * s / 2 + 6, a = along(0.88, w / s), b = along(0.92, -w / s);
+      ctx.strokeStyle = 'rgba(8,6,6,0.85)'; ctx.lineWidth = 15 * s; ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke();
+      ctx.strokeStyle = L.belt; ctx.lineWidth = 12 * s; ctx.stroke();
+      ctx.strokeStyle = 'rgba(120,100,60,0.75)'; ctx.lineWidth = 1.8 * s;
+      for (let k = 0.1; k < 0.95; k += 0.14) { const p = [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k]; const q1 = along(0, 0); ctx.beginPath(); ctx.moveTo(p[0] + 3 * s, p[1] - 5 * s); ctx.lineTo(p[0] - 3 * s, p[1] + 5 * s); ctx.stroke(); }
+      ctx.fillStyle = '#efe9d8'; ctx.strokeStyle = 'rgba(8,6,6,0.7)'; ctx.lineWidth = 1.4;
+      for (const off of [w / s * 0.55, w / s * 0.1]) {
+        const t = along(0.95, off), dn = [(H[0] - S[0]), (H[1] - S[1])], L0 = Math.hypot(dn[0], dn[1]); dn[0] /= L0; dn[1] /= L0;
+        const side = [n[0], n[1]], zz = [];
+        for (let z = 0; z < 4; z++) { const d0 = 6 * s + z * 9 * s, sx = (z % 2 ? 1 : -1) * 4 * s; zz.push([t[0] + dn[0] * d0 + side[0] * sx, t[1] + dn[1] * d0 + side[1] * sx]); }
+        ctx.beginPath(); ctx.moveTo(t[0] - side[0] * 3 * s, t[1] - side[1] * 3 * s);
+        for (const q of zz) ctx.lineTo(q[0] - side[0] * 3 * s, q[1] - side[1] * 3 * s);
+        for (const q of zz.slice().reverse()) ctx.lineTo(q[0] + side[0] * 3 * s, q[1] + side[1] * 3 * s);
+        ctx.lineTo(t[0] + side[0] * 3 * s, t[1] + side[1] * 3 * s); ctx.closePath(); ctx.fill(); ctx.stroke();
+      }
+    } else if (L.belt) {
       const w = L.waist * s / 2 + 2;
       const a = along(0.9, w / s), b = along(0.9, -w / s);
       ctx.strokeStyle = L.belt; ctx.lineWidth = (L.belly ? 9 : 6) * s;
@@ -411,30 +428,36 @@ const Rig = (() => {
       ctx.fillStyle = 'rgba(255,240,220,0.25)'; ctx.beginPath(); ctx.arc(hx + ux * r * 0.45 - fx * r * 0.2, hy + uy * r * 0.45 - fy * r * 0.2, r * 0.35, 0, 7); ctx.fill();
     }
     if (L.mask) {
-      // steel war mask (Chris's reference): tall oval, slanted eye slits, nose ridge, a scar, bun on top
+      // black oni mask from Shogun II: horns, scowling brow, glinting eyes, fanged grimace, hair plume behind
       const P = (f, u) => [hx + fx * r * f + ux * r * u, hy + fy * r * f + uy * r * u];
       ctx.fillStyle = L.hair; ctx.beginPath(); ctx.arc(hx, hy, r * 1.04, 0, 7); ctx.fill();
-      const bun = P(-0.1, 1.12); ctx.beginPath(); ctx.arc(bun[0], bun[1], r * 0.38, 0, 7); ctx.fill();
-      ctx.strokeStyle = '#3a2c22'; ctx.lineWidth = 2.5 * s; const t1 = P(-0.4, 0.86), t2 = P(0.2, 0.86); ctx.beginPath(); ctx.moveTo(t1[0], t1[1]); ctx.lineTo(t2[0], t2[1]); ctx.stroke();
-      const mc = P(0.22, -0.12);
-      ctx.fillStyle = L.mask; ctx.strokeStyle = '#141416'; ctx.lineWidth = 2.6 * s;
-      ctx.beginPath(); ctx.ellipse(mc[0], mc[1], r * 0.8, r * 1.1, a, 0, 7); ctx.fill(); ctx.stroke();
-      // lit forehead and cheek, shadowed jaw
-      ctx.fillStyle = 'rgba(220,226,232,0.22)'; const hl = P(0.3, 0.45); ctx.beginPath(); ctx.ellipse(hl[0], hl[1], r * 0.5, r * 0.26, a, 0, 7); ctx.fill();
-      ctx.fillStyle = 'rgba(0,0,0,0.28)'; const jw = P(0.0, -0.8); ctx.beginPath(); ctx.ellipse(jw[0], jw[1], r * 0.5, r * 0.3, a, 0, 7); ctx.fill();
-      // heavy brow over narrow, angry eye slits
-      ctx.strokeStyle = '#2a2b2f'; ctx.lineWidth = 3.4 * s;
-      let q1 = P(-0.32, 0.38), q2 = P(0.28, 0.16), q3 = P(0.86, 0.38);
+      // plume of hair swept back from the crown
+      const c0 = P(-0.5, 0.75), c1 = P(-1.35, 1.25), c2 = P(-1.5, 0.45);
+      ctx.beginPath(); ctx.moveTo(P(-0.2, 0.95)[0], P(-0.2, 0.95)[1]); ctx.quadraticCurveTo(c1[0], c1[1], c2[0], c2[1]); ctx.quadraticCurveTo(c0[0], c0[1], P(-0.7, 0.3)[0], P(-0.7, 0.3)[1]); ctx.closePath(); ctx.fill();
+      const mc = P(0.22, -0.08);
+      ctx.fillStyle = L.mask; ctx.strokeStyle = '#050505'; ctx.lineWidth = 2.4 * s;
+      ctx.beginPath(); ctx.ellipse(mc[0], mc[1], r * 0.86, r * 1.06, a, 0, 7); ctx.fill(); ctx.stroke();
+      // horns curving up and back from the brow
+      ctx.fillStyle = L.horn; ctx.strokeStyle = '#050505'; ctx.lineWidth = 1.6 * s;
+      for (const [f0, tf, tu] of [[-0.05, -0.35, 1.75], [0.45, 0.35, 1.85]]) {
+        const b0 = P(f0 - 0.14, 0.62), b1 = P(f0 + 0.14, 0.66), tip = P(tf, tu), cp = P(f0 + 0.25, 1.35);
+        ctx.beginPath(); ctx.moveTo(b0[0], b0[1]); ctx.quadraticCurveTo(cp[0], cp[1], tip[0], tip[1]); ctx.quadraticCurveTo(P(f0 + 0.42, 1.2)[0], P(f0 + 0.42, 1.2)[1], b1[0], b1[1]); ctx.closePath(); ctx.fill(); ctx.stroke();
+      }
+      // carved highlights: brow ridge and cheekbones
+      ctx.strokeStyle = 'rgba(150,150,160,0.55)'; ctx.lineWidth = 2.6 * s;
+      let q1 = P(-0.3, 0.42), q2 = P(0.3, 0.2), q3 = P(0.9, 0.42);
       ctx.beginPath(); ctx.moveTo(q1[0], q1[1]); ctx.lineTo(q2[0], q2[1]); ctx.lineTo(q3[0], q3[1]); ctx.stroke();
-      ctx.fillStyle = opts.eyeGlow || '#050505';
-      for (const [f, tilt] of [[-0.04, -0.35], [0.6, 0.35]]) { const e = P(f, 0.02); ctx.beginPath(); ctx.ellipse(e[0], e[1], r * 0.26, r * 0.12, a + tilt * face, 0, 7); ctx.fill(); }
-      // nose ridge, mouth slit, scar across the brow
-      ctx.strokeStyle = '#dfe3e8'; ctx.lineWidth = 3.4 * s;
-      q1 = P(0.3, 0.1); q2 = P(0.34, -0.42); ctx.beginPath(); ctx.moveTo(q1[0], q1[1]); ctx.lineTo(q2[0], q2[1]); ctx.stroke();
-      ctx.strokeStyle = '#141416'; ctx.lineWidth = 2.6 * s;
-      q1 = P(0.12, -0.7); q2 = P(0.56, -0.7); ctx.beginPath(); ctx.moveTo(q1[0], q1[1]); ctx.lineTo(q2[0], q2[1]); ctx.stroke();
-      ctx.lineWidth = 1.6 * s; q1 = P(0.5, 0.75); q2 = P(0.62, 0.45); q3 = P(0.55, 0.28);
-      ctx.beginPath(); ctx.moveTo(q1[0], q1[1]); ctx.lineTo(q2[0], q2[1]); ctx.lineTo(q3[0], q3[1]); ctx.stroke();
+      ctx.lineWidth = 1.8 * s; q1 = P(0.0, -0.25); q2 = P(0.62, -0.25); ctx.beginPath(); ctx.moveTo(q1[0], q1[1]); ctx.lineTo(q2[0], q2[1]); ctx.stroke();
+      // eyes: dark sockets with a hot glint
+      for (const f of [0.0, 0.62]) {
+        const e = P(f, 0.08); ctx.fillStyle = '#000'; ctx.beginPath(); ctx.ellipse(e[0], e[1], r * 0.2, r * 0.1, a, 0, 7); ctx.fill();
+        ctx.fillStyle = opts.eyeGlow || '#e8b23a'; ctx.beginPath(); ctx.arc(e[0] + fx * r * 0.05, e[1] + fy * r * 0.05, r * 0.06, 0, 7); ctx.fill();
+      }
+      // grimace with fangs
+      const m0 = P(0.0, -0.6), m1 = P(0.66, -0.6);
+      ctx.fillStyle = '#0a0606'; ctx.beginPath(); ctx.ellipse((m0[0] + m1[0]) / 2, (m0[1] + m1[1]) / 2, r * 0.4, r * 0.14, a, 0, 7); ctx.fill();
+      ctx.fillStyle = '#e9dcb4';
+      for (const f of [0.08, 0.58]) { const t0 = P(f, -0.48), t1 = P(f + 0.06, -0.72), t2 = P(f + 0.13, -0.48); ctx.beginPath(); ctx.moveTo(t0[0], t0[1]); ctx.lineTo(t1[0], t1[1]); ctx.lineTo(t2[0], t2[1]); ctx.closePath(); ctx.fill(); }
     } else if (L.hairStyle === 'hood') {
       ctx.fillStyle = L.hair; ctx.beginPath(); ctx.arc(hx - fx * 2, hy - 2, r * 1.15, 0, 7); ctx.fill();
       ctx.fillStyle = '#000'; ctx.beginPath(); ctx.arc(hx + fx * 4, hy + fy * 4, r * 0.7, 0, 7); ctx.fill();
