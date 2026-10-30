@@ -61,6 +61,10 @@
   .btns .wp { left: 0; top: 0; } .btns .sp { right: 0; top: 0; }
   .btns .wk { left: 0; bottom: 0; } .btns .sk { right: 0; bottom: 0; }
   .btns .sp, .btns .sk { background: #4a1712; }
+  /* one-tap special moves sit above the punch and kick buttons */
+  .btns .s1, .btns .s2 { top: calc(var(--b) * -.9); width: calc(var(--b) * 1.08); height: calc(var(--b) * .72); border-radius: 10px;
+    background: #6b1d14; font-size: calc(var(--b) * .17); line-height: 1.15; letter-spacing: .03em; }
+  .btns .s1 { left: 0; } .btns .s2 { right: 0; }
   .sys { width: calc(var(--b) * 1.15); flex: none; display: flex; flex-direction: column; gap: 6px; }
   .sys button, .sys a { position: static; width: 100%; height: calc(var(--b) * .5); border-radius: 8px; font-size: calc(var(--b) * .18); letter-spacing: .05em; }
   .sys a { display: grid; place-items: center; border: 1px solid var(--line); background: var(--btn); color: var(--ink); text-decoration: none;
@@ -109,6 +113,7 @@
     <div class="btns">
       <button class="wp" data-pad="16">LP</button><button class="sp" data-pad="32">HP</button>
       <button class="wk" data-pad="64">LK</button><button class="sk" data-pad="128">HK</button>
+      <button class="s1" data-seq="8,2,16">FIREBALL<br>&#8595;&#8594;P</button><button class="s2" data-seq="1,2,16">SPECIAL<br>&#8592;&#8594;P</button>
     </div>
     <div class="p2" aria-label="Player 2 touch controls">
       <div class="btns">
@@ -131,7 +136,7 @@
     <p id="msg"></p>
   </div>
 </div>
-<script src="host.js?v=12"></script>
+<script src="host.js?v=14"></script>
 <script>
 (async () => {
   const canvas = document.getElementById('screen');
@@ -195,8 +200,27 @@
     const dpadUp = e => { if (e.pointerId === dpadId) { dpadId = null; setDir(0); } };
     dpad.addEventListener('pointerup', dpadUp);
     dpad.addEventListener('pointercancel', dpadUp);
+    return setDir;
   }
-  bindDpad(document.getElementById('dpad'), (bit, on) => KOF.touchPad(bit, on));
+  const setDir = bindDpad(document.getElementById('dpad'), (bit, on) => KOF.touchPad(bit, on));
+  // special-move buttons type the motion for you (player 1): each step (down,
+  // forward, punch...) is held for a few frames so the engine sees every one
+  let macro = false;
+  async function playSeq(bits) {
+    if (macro) return;
+    macro = true;
+    setDir(0);
+    for (const bit of bits) {
+      KOF.touchPad(bit, true);
+      await new Promise(r => setTimeout(r, 70));
+      KOF.touchPad(bit, false);
+    }
+    macro = false;
+  }
+  for (const b of document.querySelectorAll('#touch button[data-seq]')) {
+    b.addEventListener('pointerdown', e => { e.preventDefault(); KOF.audio(); b.classList.add('on');
+      playSeq(b.dataset.seq.split(',').map(Number)).then(() => b.classList.remove('on')); });
+  }
   bindDpad(document.getElementById('dpad2'), (bit, on) => KOF.setKey(P2KEYS[bit], on));
   const twoP = document.getElementById('twoP');
   twoP.addEventListener('click', () => {
@@ -216,8 +240,8 @@
 
   let wasm, files;
   try {
-    const wasmP = fetch('kof91.wasm?v=12').then(r => { if (!r.ok) throw new Error('kof91.wasm missing'); return r.arrayBuffer(); });
-    files = await KOF.loadPak(['shogun2-data-1.wasm?v=12', 'shogun2-data-2.wasm?v=12'], f => bar.style.width = Math.round(f * 100) + '%');
+    const wasmP = fetch('kof91.wasm?v=14').then(r => { if (!r.ok) throw new Error('kof91.wasm missing'); return r.arrayBuffer(); });
+    files = await KOF.loadPak(['shogun2-data-1.wasm?v=14', 'shogun2-data-2.wasm?v=14'], f => bar.style.width = Math.round(f * 100) + '%');
     wasm = await wasmP;
   } catch (e) {
     msg.textContent = 'Could not load the game files: ' + e.message;
