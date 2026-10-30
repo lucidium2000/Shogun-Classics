@@ -1,0 +1,146 @@
+<!doctype html><html><body>
+<script src="/js/util.js"></script>
+<script src="/js/rig.js"></script>
+<script src="/js/roster.js"></script>
+<script src="/js/art.js"></script>
+<script src="/js/stages.js"></script>
+<script>
+// Renders KOF91 sprite frames for the Shogun cast using the Shogun III rig.
+// Each frame is drawn facing right with the feet at (OX, OY).
+const P = IB.Rig.POSES, B = IB.Rig.blend;
+const OX = 260, OY = 300, CW = 560, CH = 320;
+const SCALE = 0.86;
+
+function mixArms(base, arms) {
+  return Object.assign({}, base, { shF: arms.shF, elF: arms.elF, shB: arms.shB, elB: arms.elB, lean: (base.lean + arms.lean) / 2 });
+}
+function seq(...xs) { return xs; }
+
+function heavyPoses(c) {
+  if (c.prop && c.prop.kind === 'katana') return [P.drawS, P.slashH];
+  if (c.prop && c.prop.kind === 'staff') return [P.swingS, P.swingH];
+  return [P.hookS, P.hookH];
+}
+
+const SMOVE = {
+  shokei:  () => seq(P.drawS, P.drawS, B(P.drawS, P.thrustH, 0.5), P.thrustH, P.slashH, P.slashH, B(P.slashH, P.idle, 0.5), P.idle),
+  wanfu:   () => seq(P.idle, B(P.idle, P.stomp, 0.5), P.stomp, P.stomp, B(P.stomp, P.crouch, 0.5), P.crouch, P.crouch, P.idle),
+  yamana:  () => seq(P.swingS, B(P.swingS, P.swingH, 0.5), P.swingH, B(P.swingH, P.swingS, 0.5), P.swingS, P.swingH, P.swingH, P.idle),
+  frill:   () => seq(P.cleaveS, P.cleaveS, B(P.cleaveS, P.cleaveH, 0.5), P.cleaveH, P.cleaveH, P.cleaveH, B(P.cleaveH, P.idle, 0.5), P.idle),
+  onikage: () => seq(P.cleaveS, P.cleaveS, B(P.cleaveS, P.cleaveH, 0.5), P.cleaveH, P.cleaveH, P.cleaveH, B(P.cleaveH, P.idle, 0.5), P.idle),
+};
+
+function moves(c) {
+  const [hs, hh] = heavyPoses(c);
+  const intro = c.id === 'onikage' || c.id === 'frill' || c.id === 'wanfu'
+    ? seq(P.idle, P.idle, B(P.idle, P.taunt, 0.33), B(P.idle, P.taunt, 0.66), P.taunt, P.taunt, P.taunt, P.taunt, P.taunt, B(P.taunt, P.idle, 0.5), P.idle, P.idle2, P.idle3, P.idle2, P.idle)
+    : seq(P.idle, B(P.idle, P.bow, 0.25), B(P.idle, P.bow, 0.5), B(P.idle, P.bow, 0.75), P.bow, P.bow, P.bow, P.bow, B(P.bow, P.idle, 0.33), B(P.bow, P.idle, 0.66), P.idle, P.idle2, P.idle3, P.idle2, P.idle);
+  return {
+    static: seq(P.idle, P.idle2, P.idle3, P.idle2),
+    walk: seq(P.walkA, P.walkC, P.walkB, P.walkC, P.walkA),
+    jump: seq(P.jump, P.rise, P.rise, P.fall, P.land),
+    crouch: seq(P.crouch),
+    block: seq(P.block),
+    gblock: seq(P.blockLow),
+    hurt: seq(P.hurtHi, P.hurtMid, P.hurtHi),
+    ghurt: seq(P.hurtLo, P.hurtLo),
+    ko: seq(P.launch, P.tumble, B(P.tumble, P.down, 0.5), P.down, P.down),
+    intro,
+    outwin: seq(P.idle, B(P.idle, P.win, 0.33), B(P.idle, P.win, 0.66), P.win, P.win, P.win, P.win, B(P.win, P.taunt, 0.5), P.taunt, P.taunt, P.win),
+    wpunch: seq(P.jabS, B(P.jabS, P.jabH, 0.5), P.jabH, P.jabS),
+    spunch: seq(hs, B(hs, hh, 0.5), hh, hh, hs),
+    wkick: seq(P.kickS, B(P.kickS, P.kickH, 0.5), P.kickH, P.kickH, P.kickS),
+    skick: seq(P.kickS, B(P.kickS, P.showKick, 0.5), P.showKick, P.showKick, P.kickS),
+    gpunch: seq(P.crouch, mixArms(P.crouch, P.jabS), mixArms(P.crouch, P.jabH), mixArms(P.crouch, P.jabH), P.crouch),
+    gkick: seq(P.crouch, B(P.crouch, P.lowKickH, 0.5), P.lowKickH, P.lowKickH, P.lowKickH, B(P.lowKickH, P.crouch, 0.5), P.crouch, P.crouch),
+    apunch: seq(P.rise, mixArms(P.rise, P.jabS), mixArms(P.rise, P.jabH), mixArms(P.rise, P.jabH)),
+    akick: seq(P.rise, B(P.rise, P.airKickH, 0.5), P.airKickH, P.airKickH, P.rise),
+    fireb: seq(P.spWind, P.spWind, P.spHold, P.spRel, P.spRel, B(P.spRel, P.idle, 0.5)),
+    firebx: seq(P.spWind, P.spWind, P.spHold, P.spHold, P.spRel, P.spRel, B(P.spRel, P.idle, 0.5)),
+    smove: SMOVE[c.id](),
+  };
+}
+
+function drawFrame(c, pose) {
+  const cv = document.createElement('canvas');
+  cv.width = CW; cv.height = CH;
+  const ctx = cv.getContext('2d');
+  IB.Art.drawFighter(ctx, { char: c, pose, face: 1, x: OX, y: OY, scale: SCALE });
+  return cv.toDataURL('image/png');
+}
+
+// energy projectile in the fighter's colours: n frames of a pulsing bolt
+function projectile(c, w, h, n, big) {
+  const out = [];
+  const [c1, c2] = c.ui;
+  for (let i = 0; i < n; i++) {
+    const cv = document.createElement('canvas');
+    cv.width = w; cv.height = h;
+    const ctx = cv.getContext('2d');
+    const cx = w * 0.62, cy = h / 2, r = h * (0.36 + 0.05 * Math.sin(i * 1.7));
+    // tail
+    const tg = ctx.createLinearGradient(0, cy, cx, cy);
+    tg.addColorStop(0, 'rgba(0,0,0,0)'); tg.addColorStop(1, c1);
+    ctx.fillStyle = tg;
+    ctx.beginPath(); ctx.moveTo(0, cy); ctx.quadraticCurveTo(cx * 0.5, cy - r * (0.6 + 0.2 * (i % 2)), cx, cy - r * 0.8);
+    ctx.lineTo(cx, cy + r * 0.8); ctx.quadraticCurveTo(cx * 0.5, cy + r * (0.6 + 0.2 * ((i + 1) % 2)), 0, cy); ctx.fill();
+    // core
+    const g = ctx.createRadialGradient(cx, cy, 1, cx, cy, r);
+    g.addColorStop(0, '#ffffff'); g.addColorStop(0.35, c2); g.addColorStop(0.75, c1); g.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill();
+    if (big) {
+      ctx.strokeStyle = c2; ctx.lineWidth = 2;
+      for (let k = 0; k < 6; k++) {
+        const a = k * Math.PI / 3 + i * 0.4;
+        ctx.beginPath(); ctx.moveTo(cx + Math.cos(a) * r * 0.5, cy + Math.sin(a) * r * 0.5);
+        ctx.lineTo(cx + Math.cos(a) * r * 1.1, cy + Math.sin(a) * r * 1.1); ctx.stroke();
+      }
+    }
+    out.push(cv.toDataURL('image/png'));
+  }
+  return out;
+}
+
+function portrait(c, size) {
+  const cv = document.createElement('canvas');
+  cv.width = size; cv.height = size;
+  const ctx = cv.getContext('2d');
+  const g = ctx.createLinearGradient(0, 0, 0, size);
+  g.addColorStop(0, '#1a1210'); g.addColorStop(1, c.ui[0]);
+  ctx.fillStyle = g; ctx.fillRect(0, 0, size, size);
+  IB.Art.portrait(ctx, c, size * 0.5, size * 0.14, size * 2.0, 0.6);
+  return cv.toDataURL('image/png');
+}
+
+window.renderChar = function (id) {
+  const c = IB.ROSTER.find((r) => r.id === id);
+  const ms = moves(c);
+  const out = { frames: {}, portrait: portrait(c, 200), name: c.name, ui: c.ui, height: c.look.height };
+  for (const [k, list] of Object.entries(ms)) out.frames[k] = list.map((p) => drawFrame(c, p));
+  out.fball = projectile(c, 64, 24, 4, false);
+  out.fballx = projectile(c, 110, 90, 4, true);
+  return out;
+};
+
+// stage art: far + mid layers, rail and deck, cropped so the deck sits
+// near the bottom like the KOF91 backgrounds
+window.renderStage = function (id, outW, outH) {
+  const st = IB.stageById(id);
+  st.build();
+  const V = IB.VIEW;
+  const groundRow = outH - 15;
+  const s = groundRow / (V.GROUND_Y + 70);
+  const worldW = outW / s;
+  const cv = document.createElement('canvas');
+  cv.width = outW; cv.height = outH;
+  const ctx = cv.getContext('2d');
+  ctx.scale(s, s);
+  ctx.drawImage(st.farImg, -60, 0);
+  ctx.drawImage(st.midImg, -120, 0);
+  ctx.drawImage(st.barImg, -40, V.BARRICADE_Y + 30);
+  ctx.drawImage(st.deckImg, 0, V.GROUND_Y);
+  return cv.toDataURL('image/png');
+};
+window.ready = true;
+</script></body></html>

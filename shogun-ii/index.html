@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>Shogun II Restored</title>
+<style>
+  :root {
+    --bg: #0b0806;
+    --panel: #17110d;
+    --ink: #f3e6cf;
+    --muted: #a8977c;
+    --accent: #c8281e;
+    --line: #3a2a1f;
+    --btn: #2a1e17;
+  }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #0b0806; } }
+  :root[data-theme="dark"] { --bg: #0b0806; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink);
+    font-family: "Trebuchet MS", system-ui, sans-serif; overflow: hidden; touch-action: none;
+    -webkit-user-select: none; user-select: none; }
+  #app { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; }
+  #stage { flex: 1 1 auto; width: 100%; display: flex; align-items: center; justify-content: center; min-height: 0; padding: 8px; }
+  #screen { image-rendering: pixelated; image-rendering: crisp-edges; background: #000;
+    box-shadow: 0 0 0 1px var(--line), 0 12px 40px rgba(0,0,0,.6); }
+  #overlay { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 14px; background: radial-gradient(ellipse at center, rgba(60,10,6,.85), rgba(0,0,0,.95)); text-align: center; padding: 16px; z-index: 5; }
+  #overlay h1 { margin: 0; font-size: clamp(28px, 7vw, 54px); letter-spacing: .08em; color: var(--ink); text-shadow: 0 2px 0 var(--accent); }
+  #overlay p { margin: 0; color: var(--muted); max-width: 520px; line-height: 1.45; font-size: 15px; }
+  #go { font: inherit; font-size: 20px; padding: 12px 34px; background: var(--accent); color: #fff; border: 0; border-radius: 4px;
+    letter-spacing: .1em; cursor: pointer; }
+  #go:disabled { opacity: .5; cursor: default; }
+  #bar { width: min(320px, 80vw); height: 6px; background: var(--btn); border-radius: 3px; overflow: hidden; }
+  #bar i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .2s; }
+  #help { width: 100%; max-width: 760px; padding: 0 16px 10px; color: var(--muted); font-size: 12.5px; line-height: 1.5; text-align: center; }
+  #help b { color: var(--ink); font-weight: 600; }
+  kbd { font-family: ui-monospace, monospace; background: var(--btn); border: 1px solid var(--line); border-radius: 3px; padding: 0 4px; color: var(--ink); }
+
+  /* touch controls */
+  #touch { display: none; width: 100%; padding: 6px 14px calc(10px + env(safe-area-inset-bottom)); justify-content: space-between; align-items: flex-end; gap: 10px; }
+  body.touch #touch { display: flex; }
+  body.touch #help { display: none; }
+  .pad { position: relative; width: 150px; height: 150px; flex: none; }
+  .pad button, .btns button, .sys button { position: absolute; border: 1px solid var(--line); background: var(--btn); color: var(--ink);
+    font: 600 13px system-ui, sans-serif; border-radius: 10px; touch-action: none; }
+  .pad button { width: 50px; height: 50px; }
+  .pad .u { left: 50px; top: 0; } .pad .d { left: 50px; top: 100px; } .pad .l { left: 0; top: 50px; } .pad .r { left: 100px; top: 50px; }
+  .pad .ul { left: 0; top: 0; opacity: .45; } .pad .ur { left: 100px; top: 0; opacity: .45; }
+  .pad .dl { left: 0; top: 100px; opacity: .45; } .pad .dr { left: 100px; top: 100px; opacity: .45; }
+  .btns { position: relative; width: 150px; height: 130px; flex: none; }
+  .btns button { width: 64px; height: 56px; border-radius: 30px; }
+  .btns .wp { left: 0; top: 0; } .btns .sp { left: 76px; top: 0; }
+  .btns .wk { left: 0; top: 70px; } .btns .sk { left: 76px; top: 70px; }
+  .btns .sp, .btns .sk { background: #4a1712; }
+  .sys { position: relative; width: 70px; height: 110px; flex: none; }
+  .sys button { width: 70px; height: 40px; font-size: 11px; letter-spacing: .05em; }
+  .sys .start { top: 10px; } .sys .esc { top: 60px; }
+  button.on { background: var(--accent) !important; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="stage"><canvas id="screen" width="320" height="200"></canvas></div>
+  <div id="touch">
+    <div class="pad">
+      <button class="ul" data-pad="5"></button><button class="u" data-pad="4">&#9650;</button><button class="ur" data-pad="6"></button>
+      <button class="l" data-pad="1">&#9664;</button><button class="r" data-pad="2">&#9654;</button>
+      <button class="dl" data-pad="9"></button><button class="d" data-pad="8">&#9660;</button><button class="dr" data-pad="10"></button>
+    </div>
+    <div class="sys">
+      <button class="start" data-key="Enter">START</button>
+      <button class="esc" data-key="Escape">PAUSE</button>
+    </div>
+    <div class="btns">
+      <button class="wp" data-pad="16">LP</button><button class="sp" data-pad="32">HP</button>
+      <button class="wk" data-pad="64">LK</button><button class="sk" data-pad="128">HK</button>
+    </div>
+  </div>
+  <div id="help">
+    <b>Player 1:</b> move <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> &middot; punch <kbd>U</kbd> / <kbd>O</kbd> &middot; kick <kbd>J</kbd> / <kbd>L</kbd>
+    &nbsp;&nbsp;<b>Player 2:</b> arrows &middot; punch <kbd>Num4</kbd> / <kbd>Num6</kbd> &middot; kick <kbd>Num1</kbd> / <kbd>Num3</kbd>
+    &nbsp;&nbsp;<kbd>Enter</kbd> start &middot; <kbd>Esc</kbd> pause &middot; gamepads work too
+  </div>
+  <div id="overlay">
+    <h1>SHOGUN II</h1>
+    <p>The 2003 fan game, running on its original KOF91 engine code, rebuilt for the browser.</p>
+    <div id="bar"><i></i></div>
+    <button id="go" disabled>LOADING&hellip;</button>
+    <p id="msg"></p>
+  </div>
+</div>
+<script src="host.js?v=9"></script>
+<script>
+(async () => {
+  const canvas = document.getElementById('screen');
+  const overlay = document.getElementById('overlay');
+  const go = document.getElementById('go');
+  const msg = document.getElementById('msg');
+  const bar = document.querySelector('#bar i');
+
+  const isTouch = matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
+  if (isTouch) document.body.classList.add('touch');
+
+  function fit() {
+    const stage = document.getElementById('stage');
+    const w = stage.clientWidth - 16, h = stage.clientHeight - 16;
+    // 320x200 was shown on a 4:3 monitor, so pixels are taller than wide
+    let cw = w, ch = w * 3 / 4;
+    if (ch > h) { ch = h; cw = h * 4 / 3; }
+    canvas.style.width = Math.floor(cw) + 'px';
+    canvas.style.height = Math.floor(ch) + 'px';
+  }
+  addEventListener('resize', fit); fit();
+
+  // touch controls
+  for (const b of document.querySelectorAll('#touch button')) {
+    const down = e => { e.preventDefault(); b.classList.add('on'); KOF.audio();
+      if (b.dataset.pad) { const v = +b.dataset.pad; for (const bit of [1,2,4,8,16,32,64,128]) if (v & bit) KOF.touchPad(bit, true); }
+      else KOF.setKey(b.dataset.key, true); };
+    const up = e => { e.preventDefault(); b.classList.remove('on');
+      if (b.dataset.pad) { const v = +b.dataset.pad; for (const bit of [1,2,4,8,16,32,64,128]) if (v & bit) KOF.touchPad(bit, false); }
+      else KOF.setKey(b.dataset.key, false); };
+    b.addEventListener('pointerdown', down);
+    b.addEventListener('pointerup', up);
+    b.addEventListener('pointercancel', up);
+    b.addEventListener('pointerleave', up);
+  }
+
+  let wasm, files;
+  try {
+    const wasmP = fetch('kof91.wasm?v=9').then(r => { if (!r.ok) throw new Error('kof91.wasm missing'); return r.arrayBuffer(); });
+    files = await KOF.loadPak(['shogun2-data-1.wasm?v=9', 'shogun2-data-2.wasm?v=9'], f => bar.style.width = Math.round(f * 100) + '%');
+    wasm = await wasmP;
+  } catch (e) {
+    msg.textContent = 'Could not load the game files: ' + e.message;
+    go.textContent = 'ERROR';
+    return;
+  }
+  bar.style.width = '100%';
+  go.disabled = false;
+  go.textContent = 'PRESS START';
+  go.focus();
+
+  const begin = () => {
+    overlay.style.display = 'none';
+    KOF.audio();
+    KOF.start({
+      canvas, wasm, files,
+      onStatus: (s, detail) => {
+        if (s === 'exit' || s === 'crash') {
+          overlay.style.display = 'flex';
+          msg.textContent = s === 'crash' ? 'The engine stopped: ' + detail : 'Thanks for playing!';
+          go.textContent = 'PLAY AGAIN';
+          go.onclick = () => location.reload();
+        }
+      },
+    });
+  };
+  go.onclick = begin;
+})();
+</script>
+</body>
+</html>

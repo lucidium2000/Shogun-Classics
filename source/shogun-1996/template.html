@@ -1,0 +1,328 @@
+<title>Shogun (1996)</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=VT323&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: one column. A CRT bezel holds the original program; the console strip and keypad sit under it like a cabinet, notes follow. */
+:root {
+  --bg: #0c0b0e;          /* room dark */
+  --bezel: #1b1a1f;       /* monitor plastic */
+  --bezel-edge: #2c2a31;
+  --ink: #e6e0d4;         /* paper white */
+  --dim: #9a9389;
+  --red: #c33a2c;         /* QBasic COLOR 4 HUD */
+  --cyan: #55e3e3;        /* COLOR 11 title */
+  --amber: #d8913a;       /* COLOR 6 fighters */
+  --key: #26242b;
+  --key-hi: #34313a;
+  --font-display: "VT323", "Courier New", monospace;
+  --font-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  color-scheme: dark;
+}
+[hidden] { display: none !important; }
+html, body { background: var(--bg); color: var(--ink); }
+body {
+  font-family: var(--font-body); font-size: 15px; line-height: 1.55;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 16px 40px;
+}
+.wrap { max-width: 980px; margin: 0 auto; display: grid; gap: 18px; }
+header { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 16px; }
+.brand { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.brand h1 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 46px; line-height: 1; letter-spacing: 0.32em; color: var(--cyan); }
+.brand .sub { font-family: var(--font-display); font-size: 21px; letter-spacing: 0.18em; color: var(--dim); }
+.brand .sub b { color: var(--red); font-weight: 400; }
+.toolbar { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; }
+.group { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.seg { display: inline-flex; border: 1px solid var(--bezel-edge); border-radius: 6px; overflow: hidden; }
+.seg button, .btn {
+  font-family: var(--font-display); font-size: 19px; letter-spacing: 0.06em; color: var(--ink);
+  background: var(--bezel); border: 0; padding: 4px 11px; cursor: pointer;
+}
+.btn { border: 1px solid var(--bezel-edge); border-radius: 6px; }
+.seg button + button { border-left: 1px solid var(--bezel-edge); }
+.seg button[aria-pressed="true"] { background: var(--red); color: #fff; }
+.seg button:hover, .btn:hover { background: var(--key-hi); }
+.seg button[aria-pressed="true"]:hover { background: var(--red); }
+button:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.tool-label { font-size: 12px; color: var(--dim); text-transform: uppercase; letter-spacing: 0.08em; margin-right: 2px; }
+
+.bezel {
+  background: linear-gradient(#222027, var(--bezel));
+  border: 1px solid var(--bezel-edge); border-radius: 18px;
+  padding: clamp(10px, 2.4vw, 26px); box-shadow: 0 20px 60px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.05);
+}
+.tube { position: relative; background: #000; border-radius: 10px; overflow: hidden; line-height: 0; }
+.tube canvas { width: 100%; height: auto; display: block; }
+.tube canvas.sharp { image-rendering: pixelated; image-rendering: crisp-edges; }
+.tube::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: repeating-linear-gradient(to bottom, rgba(0,0,0,0) 0 2px, rgba(0,0,0,0.16) 2px 3px);
+  box-shadow: inset 0 0 70px rgba(0,0,0,0.6);
+}
+.power {
+  position: absolute; inset: 0; z-index: 2; display: grid; place-items: center; cursor: pointer;
+  background: radial-gradient(ellipse at center, rgba(20,18,24,0.6), rgba(0,0,0,0.92)); border: 0; color: var(--ink); width: 100%;
+  font-family: var(--font-display); line-height: 1.1;
+}
+.power .inner { display: grid; gap: 10px; justify-items: center; padding: 16px; }
+.power .big { font-size: clamp(30px, 6vw, 56px); letter-spacing: 0.3em; color: var(--cyan); padding-left: 0.3em; }
+.power .cta { font-size: clamp(20px, 3.4vw, 28px); color: #fff; background: var(--red); padding: 4px 18px; border-radius: 4px; letter-spacing: 0.1em; }
+.power .fine { font-family: var(--font-body); font-size: 13px; color: var(--dim); }
+.console { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 14px; margin-top: 12px; font-family: var(--font-display); font-size: 19px; color: var(--dim); letter-spacing: 0.05em; }
+.console .led { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: #3a3a3a; margin-right: 7px; vertical-align: 1px; }
+.console .led.on { background: #57d16a; box-shadow: 0 0 8px #57d16a; }
+.console .led.wait { background: var(--amber); box-shadow: 0 0 8px var(--amber); }
+#hint { color: var(--ink); }
+
+.pad { display: grid; grid-template-columns: auto auto; justify-content: center; gap: 14px 22px; margin-top: 14px; }
+.numpad { display: grid; grid-template-columns: repeat(3, 62px); grid-auto-rows: 56px; gap: 7px; }
+.actions { display: grid; grid-template-columns: repeat(2, 78px); grid-auto-rows: 56px; gap: 7px; }
+.key {
+  font-family: var(--font-display); color: var(--ink); background: var(--key); border: 1px solid var(--bezel-edge);
+  border-bottom-width: 3px; border-radius: 7px; display: grid; place-content: center; text-align: center; line-height: 0.95;
+  font-size: 26px; cursor: pointer; user-select: none; -webkit-user-select: none; touch-action: manipulation; padding: 0;
+}
+.key small { display: block; font-size: 14px; letter-spacing: 0.08em; color: var(--dim); }
+.key.mv small { color: var(--amber); }
+.key:active, .key.down { background: var(--key-hi); transform: translateY(1px); border-bottom-width: 2px; }
+.key.wide { grid-column: span 2; }
+.key.punch { grid-column: span 2; grid-row: span 2; background: #3a1714; border-color: #5a2520; font-size: 30px; }
+.key.punch small { color: #f0a59b; }
+.key.enter { grid-column: span 2; }
+
+.notes { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 18px 34px; }
+.notes h2 { font-family: var(--font-display); font-weight: 400; font-size: 28px; letter-spacing: 0.12em; color: var(--cyan); margin: 0 0 8px; text-wrap: balance; }
+.notes p { margin: 0 0 10px; max-width: 65ch; }
+table.moves { width: 100%; border-collapse: collapse; font-size: 14px; }
+.moves td { padding: 6px 0; border-bottom: 1px solid var(--bezel-edge); vertical-align: top; }
+.moves td:first-child { white-space: nowrap; padding-right: 14px; }
+kbd { font-family: var(--font-display); font-size: 18px; background: var(--key); border: 1px solid var(--bezel-edge); border-bottom-width: 2px; border-radius: 4px; padding: 0 6px; color: var(--ink); }
+details { border: 1px solid var(--bezel-edge); border-radius: 8px; padding: 8px 12px; margin-top: 12px; background: var(--bezel); }
+summary { cursor: pointer; font-weight: 600; }
+details ul, .notes ul { margin: 8px 0 0; padding-left: 18px; }
+details li, .notes li { margin-bottom: 5px; }
+.muted { color: var(--dim); font-size: 13px; }
+.fat td:first-child { color: var(--amber); }
+@media (max-width: 760px) {
+  .notes { grid-template-columns: minmax(0, 1fr); }
+  .brand h1 { font-size: 38px; }
+  .bezel { border-radius: 12px; }
+  .brand .sub { font-size: 18px; }
+}
+@media (max-width: 420px) {
+  .numpad { grid-template-columns: repeat(3, 54px); grid-auto-rows: 52px; }
+  .actions { grid-template-columns: repeat(2, 66px); grid-auto-rows: 52px; }
+  .pad { gap: 10px 12px; }
+}
+@media (prefers-reduced-motion: reduce) { .key:active { transform: none; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <h1>SHOGUN</h1>
+      <span class="sub">SHOTAKAN TAKAMARA · <b>MYSTICAL SOFTWARE</b> · 1996</span>
+    </div>
+    <div class="toolbar">
+      <span class="group"><span class="tool-label">Version</span>
+      <div class="seg" id="ver">
+        <button type="button" id="ver-restored" data-v="restored">Restored</button>
+        <button type="button" id="ver-original" data-v="original">Original</button>
+      </div></span>
+      <span class="group"><span class="tool-label">CPU</span>
+      <div class="seg" id="cpu">
+        <button type="button" id="cpu-386" data-r="14000">386</button>
+        <button type="button" id="cpu-486" data-r="30000">486</button>
+        <button type="button" id="cpu-pent" data-r="80000">Pentium</button>
+      </div></span>
+      <button type="button" class="btn" id="snd">Sound on</button>
+      <button type="button" class="btn" id="reset">Reset</button>
+    </div>
+  </header>
+
+  <section class="bezel" aria-label="Game screen">
+    <div class="tube">
+      <canvas id="scr" width="640" height="400" aria-label="QBasic screen running SHOGUN.BAS"></canvas>
+      <button type="button" class="power" id="power">
+        <span class="inner">
+          <span class="big">SHOGUN</span>
+          <span class="cta">PRESS TO POWER ON</span>
+          <span class="fine">The 1996 QBasic code, running as it was written. Turn sound up.</span>
+        </span>
+      </button>
+    </div>
+    <div class="console">
+      <span><span class="led" id="led"></span><span id="file">C:\SHOGUN\SHOGUN.BAS</span></span>
+      <span id="hint">Waiting for power</span>
+    </div>
+    <div class="pad" id="pad" aria-label="On-screen keys">
+      <div class="numpad">
+        <button type="button" class="key" data-k="7">7</button>
+        <button type="button" class="key mv" data-k="8">8<small>JUMP</small></button>
+        <button type="button" class="key" data-k="9">9</button>
+        <button type="button" class="key mv" data-k="4">4<small>BLOCK</small></button>
+        <button type="button" class="key" data-k="5">5</button>
+        <button type="button" class="key mv" data-k="6">6<small>FWD</small></button>
+        <button type="button" class="key" data-k="1">1</button>
+        <button type="button" class="key mv" data-k="2">2<small>DUCK</small></button>
+        <button type="button" class="key" data-k="3">3</button>
+        <button type="button" class="key wide" data-k="0">0<small>REDRAW</small></button>
+        <button type="button" class="key" data-k="\b">⌫</button>
+      </div>
+      <div class="actions">
+        <button type="button" class="key" data-k="k">K<small>KEERO</small></button>
+        <button type="button" class="key" data-k="s">S<small>SHO'KI</small></button>
+        <button type="button" class="key punch" data-k=" ">SPACE<small>PUNCH</small></button>
+        <button type="button" class="key enter" data-k="\r">ENTER</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="notes">
+    <div>
+      <h2>HOW TO FIGHT</h2>
+      <p>The game reads the number keys the way it did on a 1996 keyboard's numpad. Arrow keys work too.</p>
+      <table class="moves">
+        <tr><td><kbd>Space</kbd></td><td>Punch. Mash it.</td></tr>
+        <tr><td><kbd>8</kbd> or <kbd>↑</kbd></td><td>Jump. Hit <kbd>Space</kbd> in the air for a jump kick.</td></tr>
+        <tr><td><kbd>2</kbd> or <kbd>↓</kbd></td><td>Duck. Then <kbd>Space</kbd> for an uppercut.</td></tr>
+        <tr><td><kbd>4</kbd> or <kbd>←</kbd></td><td>Block. <kbd>6</kbd> drops the guard.</td></tr>
+        <tr><td>Block, then <kbd>4</kbd><kbd>6</kbd><kbd>6</kbd></td><td>Keero's fireball.</td></tr>
+        <tr><td>Block, then <kbd>2</kbd><kbd>6</kbd><kbd>8</kbd></td><td>Sho'ki's sword special.</td></tr>
+        <tr><td><kbd>0</kbd></td><td>Redraw the screen.</td></tr>
+        <tr><td><kbd>Enter</kbd></td><td>Every "PRESS (ENTER)" prompt. The game hides what you type in black, so the hint under the screen tells you when it is listening.</td></tr>
+      </table>
+      <details>
+        <summary>Fatality codes (spoilers)</summary>
+        <p class="muted" style="margin-top:8px">When <b>FINISH HIM!!</b> flashes, press <kbd>Space</kbd>, type the code and press <kbd>Enter</kbd>. The screen hides what you type, so check the strip under it.</p>
+        <table class="moves fat">
+          <tr><td>vs Wan'fu</td><td>Keero <kbd>668</kbd> decapitation or <kbd>246</kbd> spike pit. Sho'ki <kbd>6264</kbd> sword or <kbd>468</kbd>.</td></tr>
+          <tr><td>vs Yamana</td><td>Keero <kbd>668</kbd>, Sho'ki <kbd>6264</kbd>, or anyone <kbd>4655</kbd> for the secret one.</td></tr>
+          <tr><td>vs Frill</td><td><kbd>668</kbd> or <kbd>46</kbd>.</td></tr>
+          <tr><td>Character select</td><td><kbd>&gt;</kbd> skips straight to Yamana as Keero, <kbd>&lt;</kbd> as Sho'ki. A 1996 cheat.</td></tr>
+        </table>
+      </details>
+    </div>
+    <div>
+      <h2>ABOUT THIS PORT</h2>
+      <p>Nothing here was redrawn. The page carries a small QBasic interpreter, and it runs the 1996 <code>SHOGUN.BAS</code> and its stage 4 file <code>CSHOGUN.BAS</code> line by line: the same <code>PRINT</code> art, <code>PLAY</code> music, delay loops and the same habit of the enemy attacking whenever your key buffer runs dry.</p>
+      <ul>
+        <li><b>Restored</b> fixes what kept parts of the game from working in 1996. Several fatality codes were written with a trailing space (<code>"668 "</code>), which <code>INPUT</code> can never return. The Yamana secret fatality restarted the stage instead of moving on. Beating Frill looped you back to Frill. The "Mystical Software Presents" intro was in the code but skipped with a <code>GOTO</code>.</li>
+        <li><b>Original</b> runs the files exactly as found, bugs included.</li>
+        <li>The game-over file <code>LEND.BAS</code> lived on a floppy that never made it into the zip, so it was recreated in the same style. The Restored ending after Frill is new too.</li>
+        <li><b>CPU</b> sets how fast the delay loops run. The code itself asked whether it was on a 386 or a 486.</li>
+        <li>Two-player mode (press <kbd>2</kbd> at the title) was never finished in 1996. It runs, but a knockout leaves it looping. Use Reset to get out.</li>
+      </ul>
+    </div>
+  </section>
+</div>
+
+<!--SOURCES-->
+
+<script>
+const CP437 = /*CP437*/;
+const FONT = Uint8Array.from(atob("/*FONT*/"), c => c.charCodeAt(0));
+/*ENGINE*/
+/*PATCHES*/
+(function () {
+  const $ = id => document.getElementById(id);
+  const canvas = $('scr'), led = $('led'), hint = $('hint'), file = $('file');
+  const store = {
+    get(k, d) { try { const v = localStorage.getItem('shogun96.' + k); return v == null ? d : v; } catch (e) { return d; } },
+    set(k, v) { try { localStorage.setItem('shogun96.' + k, v); } catch (e) {} },
+  };
+  let version = store.get('version', 'restored');
+  let rate = +store.get('rate', '30000');
+  const sources = {};
+  document.querySelectorAll('script[type="text/x-qbasic"]').forEach(s => { sources[s.dataset.name] = s.textContent.replace(/^\n/, ''); });
+  const getSource = name => {
+    if (name === 'CCSHOGUN') name = 'CSHOGUN';   // the Sho'ki copy of stage 4 never existed; CSHOGUN picks Keero itself
+    if (name === 'WEND' && version !== 'restored') return null;
+    const src = sources[name];
+    return src == null ? null : patchSource(name, src, version);
+  };
+  const screen = new Screen(canvas), speaker = new Speaker();
+  screen.onMode = m => { canvas.style.aspectRatio = m === 13 ? '320 / 200' : (m === 0 ? '640 / 400' : '640 / 480'); };
+  screen.onMode(0);
+  // Pixel-perfect when the screen is shown at full size or larger, smoothed when a phone shrinks it.
+  const sharpen = () => canvas.classList.toggle('sharp', canvas.clientWidth >= canvas.width);
+  window.addEventListener('resize', sharpen);
+  const om = screen.onMode; screen.onMode = m => { om(m); sharpen(); };
+  sharpen();
+  const vm = new VM(screen, speaker, getSource);
+  vm.rate = rate;
+  window.shogunVM = vm;
+
+  const updateHint = () => {
+    const st = vm.state;
+    led.className = 'led ' + (st === 'input' ? 'wait' : (st === 'run' || st === 'sleep') ? 'on' : '');
+    file.textContent = 'C:\\SHOGUN\\' + (vm.progName || 'SHOGUN') + '.BAS';
+    hint.textContent = st === 'input' ? (vm.inputBuf ? 'Typed (hidden on screen): ' + vm.inputBuf.replace(/ /g, '\u2423') + '  then ENTER' : 'Listening: type, then press ENTER')
+      : st === 'ended' ? 'Program ended. Press any key to play again'
+      : st === 'error' ? (vm.errorMsg || 'Error') + '. Press any key'
+      : st === 'off' ? 'Waiting for power' : 'Running';
+  };
+  vm.onState = updateHint;
+
+  const setPressed = () => {
+    document.querySelectorAll('#ver button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === version)));
+    document.querySelectorAll('#cpu button').forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.r === rate)));
+    $('snd').textContent = speaker.on ? 'Sound on' : 'Sound off';
+  };
+  setPressed();
+
+  let started = false;
+  const start = () => {
+    speaker.unlock();
+    if (started) return;
+    started = true; $('power').hidden = true;
+    vm.boot('SHOGUN');
+  };
+  $('power').addEventListener('click', start);
+  $('reset').addEventListener('click', () => { speaker.unlock(); vm.cache.clear(); if (!started) start(); else vm.boot('SHOGUN'); });
+  $('snd').addEventListener('click', () => { speaker.on = !speaker.on; if (!speaker.on) speaker.reset(); setPressed(); });
+  document.querySelectorAll('#ver button').forEach(b => b.addEventListener('click', () => {
+    if (b.dataset.v === version) return;
+    version = b.dataset.v; store.set('version', version); setPressed(); vm.cache.clear();
+    if (started) vm.boot('SHOGUN');
+  }));
+  document.querySelectorAll('#cpu button').forEach(b => b.addEventListener('click', () => {
+    rate = +b.dataset.r; vm.rate = rate; store.set('rate', String(rate)); setPressed();
+  }));
+
+  document.querySelectorAll('.toolbar button, #power').forEach(b => b.addEventListener('click', () => b.blur()));
+  const press = ch => { if (!started) { start(); return; } speaker.unlock(); vm.pushKey(ch); };
+  document.querySelectorAll('.key').forEach(k => {
+    const ch = k.dataset.k === '\\r' ? '\r' : k.dataset.k === '\\b' ? '\b' : k.dataset.k;
+    k.addEventListener('pointerdown', e => { e.preventDefault(); press(ch); k.classList.add('down'); });
+    const up = () => k.classList.remove('down');
+    k.addEventListener('pointerup', up); k.addEventListener('pointerleave', up); k.addEventListener('pointercancel', up);
+  });
+
+  const KEYMAP = { Enter: '\r', Backspace: '\b', Escape: '\x1b', Tab: '\t',
+    ArrowUp: '8', ArrowDown: '2', ArrowLeft: '4', ArrowRight: '6',
+    Home: '7', PageUp: '9', End: '1', PageDown: '3', Clear: '5', Insert: '0' };
+  window.addEventListener('keydown', e => {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    const t = e.target;
+    let ch = KEYMAP[e.key];
+    if (ch === undefined && e.key.length === 1) ch = e.key;
+    if (ch === undefined) return;
+    e.preventDefault();
+    press(ch);
+  });
+
+  let last = performance.now(), shownBuf = '';
+  const frame = now => {
+    const dt = Math.min(0.1, (now - last) / 1000); last = now;
+    if (started) { vm.tick(dt); if (vm.state === 'input' && vm.inputBuf !== shownBuf) { shownBuf = vm.inputBuf; updateHint(); } }
+    screen.render();
+    requestAnimationFrame(frame);
+  };
+  requestAnimationFrame(frame);
+  updateHint();
+})();
+</script>

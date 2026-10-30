@@ -1,0 +1,175 @@
+<!doctype html><html><body><script>
+// Shogun II stage paintings. Drawn at 2x (1520x560) with the fighting
+// ground at y=530 (row 265 after halving), then scaled down by the caller.
+const W = 1520, H = 560, G = 530;
+function rng(seed) { let s = seed >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+function grad(c, y0, y1, stops) { const g = c.createLinearGradient(0, y0, 0, y1); stops.forEach(([o, col]) => g.addColorStop(o, col)); return g; }
+function glow(c, x, y, r, col, a) { const g = c.createRadialGradient(x, y, 0, x, y, r); g.addColorStop(0, col.replace('A', a)); g.addColorStop(1, col.replace('A', 0)); c.fillStyle = g; c.fillRect(x - r, y - r, 2 * r, 2 * r); }
+function ridge(c, base, amp, step, col, r, freq = 0.004, jag = 10) {
+  c.fillStyle = col; c.beginPath(); c.moveTo(0, H);
+  for (let x = 0; x <= W + step; x += step) c.lineTo(x, base - amp * (0.5 + 0.5 * Math.sin(x * freq + 1.3) * Math.sin(x * freq * 0.37 + 0.4)) - r() * jag);
+  c.lineTo(W, H); c.closePath(); c.fill();
+}
+function fog(c, y, h, col) { c.fillStyle = grad(c, y - h, y + h, [[0, col.replace('A', 0)], [0.5, col.replace('A', 1)], [1, col.replace('A', 0)]]); c.fillRect(0, y - h, W, 2 * h); }
+function pine(c, x, y, h, col) {
+  c.fillStyle = col; c.fillRect(x - h * 0.03, y - h * 0.25, h * 0.06, h * 0.25);
+  for (let i = 0; i < 5; i++) { const t = i / 5, w = h * (0.38 - t * 0.26), yy = y - h * 0.18 - t * h * 0.8;
+    c.beginPath(); c.moveTo(x - w, yy); c.lineTo(x, yy - h * 0.3); c.lineTo(x + w, yy); c.closePath(); c.fill(); }
+}
+function castle(c, x, y, s, col, lit) {
+  c.fillStyle = col;
+  // stone base
+  c.beginPath(); c.moveTo(x - 120 * s, y); c.lineTo(x - 95 * s, y - 60 * s); c.lineTo(x + 95 * s, y - 60 * s); c.lineTo(x + 120 * s, y); c.fill();
+  for (let i = 0; i < 4; i++) {
+    const w = (90 - i * 18) * s, yy = y - 60 * s - i * 42 * s;
+    c.fillRect(x - w * 0.8, yy - 30 * s, w * 1.6, 30 * s);
+    c.beginPath(); c.moveTo(x - w - 18 * s, yy - 26 * s); c.quadraticCurveTo(x - w * 0.4, yy - 36 * s, x, yy - 48 * s);
+    c.quadraticCurveTo(x + w * 0.4, yy - 36 * s, x + w + 18 * s, yy - 26 * s); c.lineTo(x + w, yy - 22 * s); c.lineTo(x - w, yy - 22 * s); c.fill();
+    if (lit) { c.fillStyle = lit; for (let k = -2; k <= 2; k++) c.fillRect(x + k * w * 0.32 - 3 * s, yy - 20 * s, 6 * s, 9 * s); c.fillStyle = col; }
+  }
+}
+function stoneLantern(c, x, y, s, col, light) {
+  c.fillStyle = col;
+  c.fillRect(x - 22 * s, y - 10 * s, 44 * s, 10 * s); c.fillRect(x - 7 * s, y - 60 * s, 14 * s, 50 * s);
+  c.fillRect(x - 20 * s, y - 70 * s, 40 * s, 10 * s); c.fillRect(x - 15 * s, y - 98 * s, 30 * s, 28 * s);
+  c.beginPath(); c.moveTo(x - 32 * s, y - 98 * s); c.lineTo(x, y - 122 * s); c.lineTo(x + 32 * s, y - 98 * s); c.fill();
+  if (light) { glow(c, x, y - 84 * s, 60 * s, light, 0.55); c.fillStyle = light.replace('A', 0.95); c.fillRect(x - 9 * s, y - 92 * s, 18 * s, 14 * s); }
+}
+function planks(c, top, cols, step) {
+  c.fillStyle = grad(c, top, H, [[0, cols[0]], [1, cols[1]]]); c.fillRect(0, top, W, H - top);
+  c.strokeStyle = cols[2]; c.lineWidth = 2;
+  for (let i = 1; i < 7; i++) { const y = top + Math.pow(i / 7, 1.5) * (H - top); c.beginPath(); c.moveTo(0, y); c.lineTo(W, y); c.stroke(); }
+  for (let x = -800; x < W + 800; x += step) { c.beginPath(); c.moveTo(W / 2 + (x - W / 2) * 0.6, top); c.lineTo(x, H); c.stroke(); }
+}
+
+const STAGES = {
+  // 1. Winter pass below Onikage's castle, snow falling at dawn
+  snowpass(c) {
+    const r = rng(7);
+    c.fillStyle = grad(c, 0, G, [[0, '#1b2238'], [0.45, '#46516e'], [0.8, '#a9a6b8'], [1, '#e2d7d0']]); c.fillRect(0, 0, W, H);
+    glow(c, 1150, 300, 260, 'rgba(255,214,190,A)', 0.55);
+    ridge(c, 330, 170, 30, '#7c8299', r, 0.003, 14);
+    // snow caps on the far range
+    c.globalAlpha = 0.5; ridge(c, 300, 150, 30, '#d7dbe8', rng(7), 0.003, 14); c.globalAlpha = 1;
+    ridge(c, 330, 170, 30, '#7c8299', rng(7), 0.003, 14);
+    castle(c, 1180, 300, 0.9, '#3a3f55', 'rgba(255,190,120,0.8)');
+    fog(c, 320, 40, 'rgba(220,224,236,A)');
+    ridge(c, 400, 90, 26, '#4c5370', r, 0.006, 10);
+    for (let i = 0; i < 26; i++) pine(c, r() * W, 410 + r() * 20, 90 + r() * 70, '#2b3048');
+    fog(c, 420, 30, 'rgba(200,206,224,A)');
+    for (let i = 0; i < 14; i++) pine(c, i * 120 + r() * 60, 470, 150 + r() * 70, '#1c2034');
+    // stone path with snow
+    c.fillStyle = grad(c, 470, H, [[0, '#9aa1b6'], [1, '#5c637c']]); c.fillRect(0, 470, W, H - 470);
+    c.fillStyle = 'rgba(70,74,96,0.35)';
+    for (let i = 0; i < 40; i++) { const x = r() * W, y = 485 + r() * 70; c.beginPath(); c.ellipse(x, y, 30 + r() * 40, 5 + r() * 4, 0, 0, 7); c.fill(); }
+    stoneLantern(c, 140, 478, 1.1, '#3b3f52', 'rgba(255,190,110,A)');
+    stoneLantern(c, 1380, 478, 1.1, '#3b3f52', 'rgba(255,190,110,A)');
+    c.fillStyle = '#eef0f6'; for (const x of [140, 1380]) { c.beginPath(); c.ellipse(x, 380, 36, 7, 0, 0, 7); c.fill(); }
+    // falling snow
+    for (let i = 0; i < 420; i++) { const s = r(); c.fillStyle = `rgba(255,255,255,${0.35 + s * 0.5})`; c.beginPath(); c.arc(r() * W, r() * H, 0.8 + s * 2.2, 0, 7); c.fill(); }
+  },
+  // 2. Harbour at night in a storm, junks in the bay, rain and lightning
+  harbor(c) {
+    const r = rng(19);
+    c.fillStyle = grad(c, 0, G, [[0, '#06080e'], [0.5, '#162131'], [1, '#2a3a4c']]); c.fillRect(0, 0, W, H);
+    // storm clouds
+    for (let i = 0; i < 70; i++) { const x = r() * W, y = r() * 220, rr = 60 + r() * 120; c.fillStyle = `rgba(${30 + r() * 25},${38 + r() * 25},${52 + r() * 25},0.35)`; c.beginPath(); c.ellipse(x, y, rr * 1.6, rr * 0.5, 0, 0, 7); c.fill(); }
+    // lightning bolt and flash
+    glow(c, 420, 120, 340, 'rgba(170,200,255,A)', 0.35);
+    c.strokeStyle = 'rgba(230,240,255,0.95)'; c.lineWidth = 3; c.beginPath(); let x = 430, y = 0; c.moveTo(x, y);
+    while (y < 300) { x += (r() - 0.5) * 50; y += 20 + r() * 25; c.lineTo(x, y); } c.stroke();
+    // far shore with a pagoda and lights
+    ridge(c, 330, 50, 24, '#0e151f', r, 0.005, 6);
+    c.fillStyle = '#0e151f'; for (let i = 0; i < 4; i++) { const w = 46 - i * 9; c.fillRect(1240 - w, 290 - i * 26, w * 2, 8); c.fillRect(1240 - w * 0.6, 270 - i * 26, w * 1.2, 22); }
+    for (let i = 0; i < 14; i++) glow(c, 900 + r() * 600, 318 + r() * 10, 10, 'rgba(255,170,80,A)', 0.7);
+    // sea
+    c.fillStyle = grad(c, 330, 460, [[0, '#1a2836'], [1, '#0b131c']]); c.fillRect(0, 330, W, 130);
+    c.strokeStyle = 'rgba(150,180,210,0.25)'; c.lineWidth = 2;
+    for (let i = 0; i < 90; i++) { const xx = r() * W, yy = 340 + r() * 110, l = 20 + r() * 50; c.beginPath(); c.moveTo(xx, yy); c.quadraticCurveTo(xx + l / 2, yy - 4, xx + l, yy); c.stroke(); }
+    // junks
+    function junk(jx, jy, s) {
+      c.fillStyle = '#05080c'; c.beginPath(); c.moveTo(jx - 120 * s, jy - 20 * s); c.lineTo(jx + 130 * s, jy - 26 * s); c.lineTo(jx + 100 * s, jy + 12 * s); c.lineTo(jx - 90 * s, jy + 12 * s); c.fill();
+      c.fillRect(jx - 4 * s, jy - 200 * s, 7 * s, 180 * s); c.fillRect(jx + 70 * s, jy - 140 * s, 5 * s, 120 * s);
+      c.fillStyle = 'rgba(70,40,30,0.95)';
+      c.beginPath(); c.moveTo(jx - 70 * s, jy - 190 * s); c.lineTo(jx + 60 * s, jy - 195 * s); c.lineTo(jx + 50 * s, jy - 40 * s); c.lineTo(jx - 60 * s, jy - 38 * s); c.fill();
+      c.strokeStyle = 'rgba(0,0,0,0.6)'; c.lineWidth = 2 * s; for (let k = 0; k < 6; k++) { const yy = jy - 180 * s + k * 26 * s; c.beginPath(); c.moveTo(jx - 66 * s, yy); c.lineTo(jx + 56 * s, yy - 2 * s); c.stroke(); }
+      glow(c, jx + 90 * s, jy - 30 * s, 26 * s, 'rgba(255,170,80,A)', 0.8);
+    }
+    junk(260, 400, 0.9); junk(1000, 380, 0.6);
+    // the pier the fighters stand on
+    planks(c, 455, ['#3b2b22', '#1a120e', 'rgba(0,0,0,0.5)'], 90);
+    c.fillStyle = '#120c09'; for (let px = 40; px < W; px += 260) { c.fillRect(px, 420, 22, 50); c.fillStyle = '#2a1e18'; c.fillRect(px - 4, 416, 30, 8); c.fillStyle = '#120c09'; }
+    c.strokeStyle = '#1a120e'; c.lineWidth = 4; c.beginPath(); for (let px = 51; px < W; px += 260) { c.moveTo(px, 430); c.quadraticCurveTo(px + 130, 450, px + 260, 430); } c.stroke();
+    // wet sheen and lantern
+    glow(c, 760, 500, 300, 'rgba(255,170,90,A)', 0.12);
+    // rain
+    c.strokeStyle = 'rgba(180,200,230,0.35)'; c.lineWidth = 1.5;
+    for (let i = 0; i < 600; i++) { const xx = r() * W, yy = r() * H; c.beginPath(); c.moveTo(xx, yy); c.lineTo(xx - 8, yy + 26); c.stroke(); }
+  },
+  // 3. Burning village at night, embers and smoke
+  village(c) {
+    const r = rng(31);
+    c.fillStyle = grad(c, 0, G, [[0, '#0b0507'], [0.5, '#3a0f0a'], [0.85, '#a3361a'], [1, '#e2742c']]); c.fillRect(0, 0, W, H);
+    // smoke
+    for (let i = 0; i < 80; i++) { const x = r() * W, y = 40 + r() * 280, rr = 40 + r() * 90; c.fillStyle = `rgba(${20 + r() * 30},${10 + r() * 15},${10 + r() * 10},0.3)`; c.beginPath(); c.ellipse(x, y, rr * 1.3, rr * 0.7, 0, 0, 7); c.fill(); }
+    ridge(c, 340, 60, 30, '#2a0d0a', r, 0.004, 8);
+    // houses with thatched roofs, some burning
+    function house(hx, hy, s, burning) {
+      c.fillStyle = '#140706'; c.fillRect(hx - 70 * s, hy - 60 * s, 140 * s, 60 * s);
+      c.beginPath(); c.moveTo(hx - 100 * s, hy - 55 * s); c.lineTo(hx - 40 * s, hy - 120 * s); c.lineTo(hx + 40 * s, hy - 120 * s); c.lineTo(hx + 100 * s, hy - 55 * s); c.fill();
+      if (burning) {
+        glow(c, hx, hy - 100 * s, 180 * s, 'rgba(255,120,30,A)', 0.55);
+        for (let k = 0; k < 9; k++) { const fx = hx - 60 * s + k * 15 * s, fh = (40 + r() * 70) * s;
+          c.fillStyle = k % 2 ? 'rgba(255,190,70,0.9)' : 'rgba(255,90,20,0.9)';
+          c.beginPath(); c.moveTo(fx - 10 * s, hy - 110 * s); c.quadraticCurveTo(fx - 6 * s, hy - 110 * s - fh * 0.6, fx + (r() - 0.5) * 10 * s, hy - 110 * s - fh); c.quadraticCurveTo(fx + 6 * s, hy - 110 * s - fh * 0.5, fx + 10 * s, hy - 110 * s); c.fill(); }
+      } else { c.fillStyle = 'rgba(255,160,70,0.6)'; c.fillRect(hx - 15 * s, hy - 40 * s, 30 * s, 18 * s); }
+    }
+    house(180, 380, 0.8, true); house(520, 370, 0.6, false); house(820, 385, 0.9, true); house(1180, 375, 0.7, false); house(1420, 380, 0.8, true);
+    // fence
+    c.fillStyle = '#100504'; for (let fx = 0; fx < W; fx += 22) c.fillRect(fx, 400 + (fx % 44 ? 4 : 0), 6, 50); c.fillRect(0, 418, W, 6);
+    // dirt road
+    c.fillStyle = grad(c, 450, H, [[0, '#5a2a18'], [1, '#1f0d08']]); c.fillRect(0, 450, W, H - 450);
+    c.fillStyle = 'rgba(0,0,0,0.25)'; for (let i = 0; i < 50; i++) { c.beginPath(); c.ellipse(r() * W, 470 + r() * 80, 20 + r() * 50, 3 + r() * 3, 0, 0, 7); c.fill(); }
+    glow(c, 760, 520, 500, 'rgba(255,110,40,A)', 0.15);
+    // embers
+    for (let i = 0; i < 260; i++) { const s = r(); c.fillStyle = `rgba(255,${120 + s * 120 | 0},40,${0.4 + s * 0.6})`; c.fillRect(r() * W, r() * 460, 1.5 + s * 2.5, 1.5 + s * 2.5); }
+  },
+  // 4. Roof of Onikage's keep under a blood moon
+  keep(c) {
+    const r = rng(43);
+    c.fillStyle = grad(c, 0, G, [[0, '#050207'], [0.6, '#1f0610'], [1, '#3d0c12']]); c.fillRect(0, 0, W, H);
+    glow(c, 1100, 150, 320, 'rgba(200,30,30,A)', 0.45);
+    c.fillStyle = '#c4281e'; c.beginPath(); c.arc(1100, 150, 92, 0, 7); c.fill();
+    c.fillStyle = 'rgba(120,10,10,0.5)'; for (let i = 0; i < 6; i++) { c.beginPath(); c.arc(1060 + r() * 80, 110 + r() * 80, 8 + r() * 14, 0, 7); c.fill(); }
+    // thin clouds over the moon
+    for (let i = 0; i < 18; i++) { c.fillStyle = 'rgba(20,4,8,0.55)'; c.beginPath(); c.ellipse(900 + r() * 500, 100 + r() * 120, 120 + r() * 120, 10 + r() * 10, 0, 0, 7); c.fill(); }
+    // the lower castle town far below
+    ridge(c, 360, 40, 20, '#12040a', r, 0.01, 18);
+    for (let i = 0; i < 40; i++) glow(c, r() * W, 345 + r() * 25, 6, 'rgba(255,120,60,A)', 0.6);
+    // the keep's upper tier behind
+    castle(c, 300, 430, 1.2, '#0c0306', 'rgba(255,70,40,0.75)');
+    // banners with Onikage's crest
+    for (const bx of [620, 1360]) {
+      c.fillStyle = '#0c0306'; c.fillRect(bx, 170, 8, 290);
+      c.fillStyle = '#7a0f12'; c.beginPath(); c.moveTo(bx + 8, 180); c.lineTo(bx + 78, 186); c.lineTo(bx + 74, 360); c.lineTo(bx + 8, 354); c.fill();
+      c.strokeStyle = '#000'; c.lineWidth = 4; c.beginPath(); c.arc(bx + 42, 240, 22, 0, 7); c.stroke();
+      c.fillStyle = '#000'; for (let k = 0; k < 3; k++) { const a = k * 2.09 - 1.57; c.beginPath(); c.arc(bx + 42 + Math.cos(a) * 9, 240 + Math.sin(a) * 9, 6, 0, 7); c.fill(); }
+    }
+    // tiled roof the fighters stand on
+    c.fillStyle = grad(c, 455, H, [[0, '#2c2328'], [1, '#0e0a0c']]); c.fillRect(0, 455, W, H - 455);
+    c.strokeStyle = 'rgba(0,0,0,0.55)'; c.lineWidth = 3;
+    for (let x = -400; x < W + 400; x += 34) { c.beginPath(); c.moveTo(W / 2 + (x - W / 2) * 0.7, 455); c.lineTo(x, H); c.stroke(); }
+    c.strokeStyle = 'rgba(200,60,60,0.12)'; c.lineWidth = 2;
+    for (let x = -400; x < W + 400; x += 34) { c.beginPath(); c.moveTo(W / 2 + (x - W / 2) * 0.7 + 3, 455); c.lineTo(x + 4, H); c.stroke(); }
+    // ridge cap with shachihoko-style end ornament
+    c.fillStyle = '#1a1316'; c.fillRect(0, 446, W, 14);
+    glow(c, 760, 520, 600, 'rgba(160,20,20,A)', 0.12);
+  },
+};
+window.renderStage2 = function (id) {
+  const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+  STAGES[id](cv.getContext('2d'));
+  return cv.toDataURL('image/png');
+};
+window.ready = true;
+</script></body></html>
