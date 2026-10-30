@@ -226,8 +226,15 @@
   go.textContent = 'PRESS START';
   go.focus();
 
+  // phones: go full screen when the player taps PRESS START
+  function goFull() {
+    const d = document.documentElement, fs = d.requestFullscreen || d.webkitRequestFullscreen;
+    if (!matchMedia('(pointer: coarse)').matches || !fs || document.fullscreenElement || document.webkitFullscreenElement) return;
+    try { const r = fs.call(d); if (r && r.catch) r.catch(() => {}); } catch (e) {}
+  }
   const begin = () => {
     overlay.style.display = 'none';
+    goFull();
     KOF.audio();
     KOF.start({
       canvas, wasm, files,

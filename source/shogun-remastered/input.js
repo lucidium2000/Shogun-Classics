@@ -5,7 +5,7 @@
    Each pad has held buttons (l r u d p sp) and an event queue. Number keys
    still work the 1996 way: 8 up, 2 down, 4 back, 6 forward, space punches. */
 const Input = (() => {
-  const I = { pads: [mk(), mk()], menu: [], twoP: false, touch: false, lastDevice: 'keys' };
+  const I = { pads: [mk(), mk()], menu: [], twoP: false, touch: false, lastDevice: 'keys', fourWay: false };
   function mk() { return { l: 0, r: 0, u: 0, d: 0, p: 0, sp: 0, ev: [], src: {} }; }
   const MAP1 = { ArrowLeft: 'l', KeyA: 'l', ArrowRight: 'r', KeyD: 'r', ArrowUp: 'u', KeyW: 'u', ArrowDown: 'd', KeyS: 'd',
     Space: 'p', KeyJ: 'p', KeyF: 'p', KeyZ: 'p', KeyK: 'sp', KeyX: 'sp', ShiftLeft: 'sp',
@@ -103,8 +103,11 @@ const Input = (() => {
       const k = Math.min(1, d / rad); knob.style.transform = `translate(${dx / d * k * rad * 0.45 || 0}px,${dy / d * k * rad * 0.45 || 0}px)`;
       if (d < rad * 0.22) return setDir('');
       const a = Math.atan2(dy, dx) * 180 / Math.PI; let dir = '';
-      if (a > -67.5 && a < 67.5) dir += 'r'; if (a > 112.5 || a < -112.5) dir += 'l';
-      if (a < -22.5 && a > -157.5) dir += 'u'; if (a > 22.5 && a < 157.5) dir += 'd';
+      if (I.fourWay) dir = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'r' : 'l') : (dy > 0 ? 'd' : 'u');
+      else {
+        if (a > -67.5 && a < 67.5) dir += 'r'; if (a > 112.5 || a < -112.5) dir += 'l';
+        if (a < -22.5 && a > -157.5) dir += 'u'; if (a > 22.5 && a < 157.5) dir += 'd';
+      }
       setDir(dir);
     };
     pad.addEventListener('pointerdown', e => { e.preventDefault(); I.touch = true; pid = e.pointerId; pad.setPointerCapture(pid); move(e); padMenu(e); });

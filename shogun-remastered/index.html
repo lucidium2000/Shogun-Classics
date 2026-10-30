@@ -4,8 +4,6 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
-</head>
-<body>
 <!-- Shogun Classics - https://github.com/lucidium2000/Shogun-Classics
      Copyright (c) 1996-2026 Chris (lucidium2000) and Mystical Software. MIT License, see LICENSE.
      Created with Corbin Hildreth, Jason Rudisill, Chance Kornegay and Elijah Matthew Cash. -->
@@ -13,6 +11,8 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Shippori+Mincho+B1:wght@800&family=VT323&display=swap">
+</head>
+<body>
 <style>
 :root { --bg: #050303; --panel: #0d0807; --line: #3a1a14; --accent: #a3201d; --brass: #c9a24b; --fg: #ebe3d3; color-scheme: dark; }
 html, body { height: 100%; }
@@ -1483,7 +1483,7 @@ const Retro = (() => {
    Each pad has held buttons (l r u d p sp) and an event queue. Number keys
    still work the 1996 way: 8 up, 2 down, 4 back, 6 forward, space punches. */
 const Input = (() => {
-  const I = { pads: [mk(), mk()], menu: [], twoP: false, touch: false, lastDevice: 'keys' };
+  const I = { pads: [mk(), mk()], menu: [], twoP: false, touch: false, lastDevice: 'keys', fourWay: false };
   function mk() { return { l: 0, r: 0, u: 0, d: 0, p: 0, sp: 0, ev: [], src: {} }; }
   const MAP1 = { ArrowLeft: 'l', KeyA: 'l', ArrowRight: 'r', KeyD: 'r', ArrowUp: 'u', KeyW: 'u', ArrowDown: 'd', KeyS: 'd',
     Space: 'p', KeyJ: 'p', KeyF: 'p', KeyZ: 'p', KeyK: 'sp', KeyX: 'sp', ShiftLeft: 'sp',
@@ -1581,8 +1581,11 @@ const Input = (() => {
       const k = Math.min(1, d / rad); knob.style.transform = `translate(${dx / d * k * rad * 0.45 || 0}px,${dy / d * k * rad * 0.45 || 0}px)`;
       if (d < rad * 0.22) return setDir('');
       const a = Math.atan2(dy, dx) * 180 / Math.PI; let dir = '';
-      if (a > -67.5 && a < 67.5) dir += 'r'; if (a > 112.5 || a < -112.5) dir += 'l';
-      if (a < -22.5 && a > -157.5) dir += 'u'; if (a > 22.5 && a < 157.5) dir += 'd';
+      if (I.fourWay) dir = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'r' : 'l') : (dy > 0 ? 'd' : 'u');
+      else {
+        if (a > -67.5 && a < 67.5) dir += 'r'; if (a > 112.5 || a < -112.5) dir += 'l';
+        if (a < -22.5 && a > -157.5) dir += 'u'; if (a > 22.5 && a < 157.5) dir += 'd';
+      }
       setDir(dir);
     };
     pad.addEventListener('pointerdown', e => { e.preventDefault(); I.touch = true; pid = e.pointerId; pad.setPointerCapture(pid); move(e); padMenu(e); });
@@ -2247,6 +2250,12 @@ const Fight = {
       G.cam += (Math.max(0, Math.min(Stages.ARENA - W, mid)) - G.cam) * Math.min(1, realDt * 4);
     }
     if (G.codeEntry) {
+      for (const e of evs) if (e.m === 'tap' && G.codeEntry) {
+        const row = G.codeRows.find(r => Math.abs(e.y - r.y) < 16 && Math.abs(e.x - W / 2) < 210);
+        if (row) { const ce = G.codeEntry; G.codeEntry = null; startFatality(ce.codes[row.code], ce.who, ce.foe); break; }
+      }
+    }
+    if (G.codeEntry) {
       G.codeEntry.t -= realDt;
       if (G.codeEntry.t <= 0) this.finishFail(true);
     }
@@ -2329,7 +2338,8 @@ const Fight = {
       this.phase = 'finish'; this.t = 0; G.wins[wi]++;
       setTimeout(() => { G.slow = 1; this.banner('FINISH HIM!!', '#ff3b2f', 2.4); Audio.say('Finish him!', 0.9, 0.1); Audio.sfx('dizzy');
         const codes = CODES[att.key][G.versus ? 0 : G.stageIdx];
-        G.codeEntry = { who: att, foe: def, codes, d: '', t: 8, max: 8 }; att.set('idle', att.def.idle[0], 8); att.vx = 0; att.digits = []; Input.take(att.pad); }, 700);
+        const secs = isTouch() ? 11 : 8;
+        G.codeEntry = { who: att, foe: def, codes, d: '', t: secs, max: secs }; att.set('idle', att.def.idle[0], 8); att.vx = 0; att.digits = []; Input.take(att.pad); }, 700);
       return;
     }
     def.ko = true; def.set('launch', 'launch', 6); def.grounded = false; def.vy = -560; def.vx = -def.face * 300;
@@ -2419,13 +2429,20 @@ G.spawnFire = function (f) {
   Audio.sfx('fireball');
   G.projectiles.push({ owner: f, kind: 'fire', x: f.x + f.face * 70, y: -150, vx: f.face * 560, dmg: 1.5, t: 0, alive: true });
 };
+// Codes are read leniently: a repeated direction only has to be pushed once
+// (668 works as right, up), and a stray push that fits no code is ignored
+// instead of failing, so the stick on a phone is forgiving. Only the timer fails.
+const squash = s => s.replace(/(.)\1+/g, '$1');
 G.codeDigit = function (d) {
   const ce = G.codeEntry; if (!ce) return;
-  ce.d += d; Audio.sfx('code', ce.d.length);
-  const codes = Object.keys(ce.codes);
-  if (ce.codes[ce.d]) { const kind = ce.codes[ce.d]; G.codeEntry = null; startFatality(kind, ce.who, ce.foe); return; }
-  if (!codes.some(c => c.startsWith(ce.d))) Fight.finishFail(false);
+  const codes = Object.keys(ce.codes), fits = s => codes.find(c => squash(c).startsWith(squash(s)));
+  let next = ce.d + d;
+  if (!fits(next)) { if (!fits(String(d))) return; next = String(d); }   // ignore the stray, or start again from it
+  ce.d = next; Audio.sfx('code', ce.d.length);
+  const hit = codes.find(c => squash(c) === squash(ce.d));
+  if (hit) { const kind = ce.codes[hit]; G.codeEntry = null; startFatality(kind, ce.who, ce.foe); }
 };
+G.codeRows = [];   // where each code is drawn, so a tap on it does the fatality
 function frillBlast(fr) {
   fr.set('blast', 'blastS', 16);
   setTimeout(() => { if (!G.fighting) return; fr.target = 'blastH'; fr.speed = 30; Audio.sfx('blast'); FX.flash = 0.4; FX.flashCol = '#bfe6ff';
@@ -2521,15 +2538,16 @@ function drawCodeEntry() {
   ctx.strokeStyle = '#a3201d'; ctx.lineWidth = 2; ctx.strokeRect(W / 2 - 200, 446, 400, 74);
   ctx.fillStyle = '#a3201d'; ctx.fillRect(W / 2 - 198, 514, 396 * Math.max(0, ce.t / ce.max), 4);
   ctx.restore();
+  G.codeRows = list.map(([code], i) => ({ code, y: top + 19 + i * 30 }));
   list.forEach(([code, kind], i) => {
-    const y = top + 19 + i * 30, ok = code.startsWith(ce.d);
+    const y = top + 19 + i * 30, ok = squash(code).startsWith(squash(ce.d));
     const col = ok ? '#ffdd55' : '#6b5f50';
     text(FATAL_NAMES[kind], W / 2 - 20, y, 20, col, { align: 'right', spacing: 2 });
     text(codeArrows(code, face), W / 2 + 4, y, 28, col, { font: FONT.dos, weight: 400, align: 'left' });
   });
   const s = codeArrows(ce.d, face);
   text(s || '_', W / 2, 476, 36, '#ffffff', { font: FONT.dos, weight: 400 });
-  text(isTouch() ? 'FOLLOW A CODE ON THE PAD · ● = P BUTTON' : 'FOLLOW A CODE WITH THE ARROWS OR NUMBER PAD · ● = PUNCH', W / 2, 505, 14, '#c9b9a0', { spacing: 1 });
+  text(isTouch() ? 'TAP A FATALITY, OR FOLLOW ITS CODE ON THE STICK' : 'FOLLOW A CODE WITH THE ARROWS OR NUMBER PAD · ● = PUNCH', W / 2, 505, 14, '#c9b9a0', { spacing: 1 });
 }
 
 /* ------------------------------------------------------------ pause */
@@ -2725,6 +2743,14 @@ cv.addEventListener('pointerdown', e => {
 });
 addEventListener('touchstart', () => { Input.touch = true; document.body.classList.add('touch'); }, { passive: true });
 
+// phones: go full screen on the first tap (browsers only allow it from a tap)
+function goFull() {
+  const d = document.documentElement, fs = d.requestFullscreen || d.webkitRequestFullscreen;
+  if (!matchMedia('(pointer: coarse)').matches || !fs || document.fullscreenElement || document.webkitFullscreenElement) return;
+  try { const r = fs.call(d); if (r && r.catch) r.catch(() => {}); } catch (e) {}
+}
+addEventListener('pointerdown', goFull, { once: true, capture: true });
+
 // back to the Shogun Classics menu (the folder above this game)
 function toMenu(e) {
   if (e && e.preventDefault) e.preventDefault();
@@ -2739,6 +2765,7 @@ function frame(now) {
   G.time += dt; G.frameDt = dt;
   Input.pollPads();
   document.body.classList.toggle('two', Input.twoP);
+  Input.fourWay = !!G.codeEntry;   // during FINISH HIM the stick reads only up, down, left and right
   document.body.classList.toggle('front', G.scene === Title || G.scene === Power);   // corner MENU link only on the title screens
   const evs = Input.takeMenu();
   try {

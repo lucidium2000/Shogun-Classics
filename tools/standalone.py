@@ -5,7 +5,7 @@
 (GitHub Pages). The game builds produce body-only pages for claude.ai Artifacts,
 which add this skeleton at publish time.
 Usage: python3 tools/standalone.py SRC [DST]   (DST defaults to SRC, wrapped in place)"""
-import sys
+import re, sys
 HEAD = '''<!doctype html>
 <html lang="en">
 <head>
@@ -17,6 +17,9 @@ src = sys.argv[1]
 dst = sys.argv[2] if len(sys.argv) > 2 else src
 t = open(src).read()
 if not t.lstrip().lower().startswith('<!doctype'):
-    t = HEAD + '</head>\n<body>\n' + t + '\n</body>\n</html>\n'
+    # leading comments, <title>, <meta> and <link> tags belong in <head>
+    m = re.match(r'(\s*(?:<!--.*?-->|<title>.*?</title>|<meta\b[^>]*>|<link\b[^>]*>)\s*)*', t, re.S)
+    head, body = t[:m.end()], t[m.end():]
+    t = HEAD + head + '</head>\n<body>\n' + body + '\n</body>\n</html>\n'
 open(dst, 'w').write(t)
 print('wrote', dst)

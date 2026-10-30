@@ -3,6 +3,13 @@
      Created with Corbin Hildreth, Jason Rudisill, Chance Kornegay and Elijah Matthew Cash. -->
 <title>Shogun Classics</title>
 <meta name="claude:viewport-fit-sides" content="cover">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0c0908">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Shogun Classics">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@800&family=Barlow+Condensed:wght@500;600;700&family=VT323&display=swap">
@@ -199,6 +206,14 @@ footer a { color: var(--ink); }
     raf = requestAnimationFrame(poll);
   }
   addEventListener('gamepadconnected', () => { if (!raf) poll(); });
+
+  // phones: go full screen on the first tap
+  function goFull() {
+    const d = document.documentElement, fs = d.requestFullscreen || d.webkitRequestFullscreen;
+    if (!matchMedia('(pointer: coarse)').matches || !fs || document.fullscreenElement || document.webkitFullscreenElement) return;
+    try { const r = fs.call(d); if (r && r.catch) r.catch(() => {}); } catch (e) {}
+  }
+  addEventListener('pointerdown', goFull, { once: true, capture: true });
 
   // title music at 70% (through WebAudio, since phones ignore <audio> volume); browsers start it on the first tap or key
   const btn = document.getElementById('music');

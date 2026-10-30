@@ -153,8 +153,52 @@ details li, .notes li { margin-bottom: 5px; }
   .pad { gap: 10px 12px; }
 }
 @media (prefers-reduced-motion: reduce) { .key:active { transform: none; } }
+
+/* phones: the game fills the screen and the keys float over it; the options sit behind a small button */
+#opts { display: none; }
+body.play { padding: 0; overflow: hidden; height: 100%; touch-action: none; }
+body.play .wrap { display: block; }
+body.play .notes, body.play .console { display: none; }
+body.play header { display: none; }
+body.play.showopts header { display: flex; position: fixed; z-index: 20; top: 0; left: 0; right: 0; flex-direction: column; align-items: flex-start; gap: 10px;
+  padding: calc(12px + env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) 14px max(60px, calc(44px + env(safe-area-inset-left, 0px)));
+  background: rgba(12, 11, 14, 0.96); border-bottom: 1px solid var(--bezel-edge); }
+body.play.showopts .brand h1 { font-size: 30px; }
+body.play #opts { display: grid; place-items: center; position: fixed; z-index: 21; top: calc(8px + env(safe-area-inset-top, 0px)); left: max(8px, env(safe-area-inset-left, 0px));
+  width: 38px; height: 38px; border-radius: 8px; border: 1px solid var(--bezel-edge); background: rgba(27, 26, 31, 0.7); color: var(--ink);
+  font-family: var(--font-display); font-size: 22px; cursor: pointer; }
+body.play .bezel { position: fixed; inset: 0; z-index: 1; border: 0; border-radius: 0; padding: 0; box-shadow: none; background: #000; display: block; }
+body.play .tube { position: absolute; inset: 0; border-radius: 0; }
+body.play .tube canvas { width: 100%; height: 100%; max-width: none; object-fit: contain; object-position: center top; }
+body.play .tube::after { display: none; }
+body.play .pad { position: fixed; z-index: 5; left: 0; right: 0; bottom: 0; margin: 0; display: flex; justify-content: space-between; align-items: flex-end;
+  padding: 0 max(10px, env(safe-area-inset-right, 0px)) calc(10px + env(safe-area-inset-bottom, 0px)) max(10px, env(safe-area-inset-left, 0px)); pointer-events: none; }
+body.play .pad > * { pointer-events: auto; }
+body.play .numpad { grid-template-columns: repeat(3, 52px); grid-auto-rows: 48px; gap: 6px; }
+body.play .actions { grid-template-columns: repeat(2, 64px); grid-auto-rows: 48px; gap: 6px; }
+body.play .key { background: rgba(38, 36, 43, 0.62); border-color: rgba(70, 66, 78, 0.7); font-size: 22px; backdrop-filter: blur(2px); }
+body.play .key small { font-size: 11px; }
+body.play .key.punch { background: rgba(58, 23, 20, 0.7); font-size: 24px; }
+body.play .key.cheat { display: none; }
+body.play.showopts .key.cheat { display: grid; }
+body.play .fatal { position: fixed; z-index: 6; left: 50%; transform: translateX(-50%); width: min(92vw, 520px); bottom: auto; top: calc(56px + env(safe-area-inset-top, 0px) + 75vw + 8px);
+  background: rgba(0, 0, 0, 0.82); border: 1px solid #5a2520; border-radius: 10px; padding: 10px; }
+@media (orientation: portrait) {
+  body.play .tube { bottom: auto; top: calc(52px + env(safe-area-inset-top, 0px)); }
+  body.play .tube canvas { height: auto; }
+  body.play .power { position: fixed; }
+}
+@media (orientation: landscape) {
+  body.play .tube canvas { object-position: center; }
+  body.play .numpad { grid-template-columns: repeat(3, 46px); grid-auto-rows: 42px; }
+  body.play .actions { grid-template-columns: repeat(2, 56px); grid-auto-rows: 42px; }
+  body.play .key { opacity: 0.8; }
+  body.play .fatal { top: auto; bottom: calc(10px + env(safe-area-inset-bottom, 0px)); width: min(44vw, 420px); padding: 8px; }
+  body.play .fatal-note { display: none; }
+}
 </style>
 
+<button type="button" id="opts" aria-label="Options" aria-expanded="false">&#9776;</button>
 <div class="wrap">
   <header>
     <div class="brand">
@@ -323,10 +367,20 @@ const FONT = Uint8Array.from(atob("/*FONT*/"), c => c.charCodeAt(0));
     if (started) return;
     started = true; $('power').hidden = true;
     vm.boot('SHOGUN');
-    // on a phone, bring the screen and keys into view together
-    if (matchMedia('(pointer: coarse)').matches) $('scr').closest('.bezel').scrollIntoView({ block: 'start', behavior: 'smooth' });
   };
   $('power').addEventListener('click', start);
+  // phones: full-screen play with the keys over the game
+  const touchy = matchMedia('(pointer: coarse)').matches;
+  if (touchy) document.body.classList.add('play');
+  $('opts').addEventListener('click', () => {
+    const on = document.body.classList.toggle('showopts');
+    $('opts').setAttribute('aria-expanded', on); $('opts').innerHTML = on ? '&#10005;' : '&#9776;';
+  });
+  const goFull = () => {
+    const d = document.documentElement, fs = d.requestFullscreen || d.webkitRequestFullscreen;
+    if (touchy && fs && !document.fullscreenElement && !document.webkitFullscreenElement) { try { const r = fs.call(d); if (r && r.catch) r.catch(() => {}); } catch (e) {} }
+  };
+  addEventListener('pointerdown', goFull, { once: true, capture: true });
   // back to the Shogun Classics menu (the folder above this game)
   $('toMenu').addEventListener('click', e => {
     let same = false;

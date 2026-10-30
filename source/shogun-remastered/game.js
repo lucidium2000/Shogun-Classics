@@ -394,6 +394,12 @@ const Fight = {
       G.cam += (Math.max(0, Math.min(Stages.ARENA - W, mid)) - G.cam) * Math.min(1, realDt * 4);
     }
     if (G.codeEntry) {
+      for (const e of evs) if (e.m === 'tap' && G.codeEntry) {
+        const row = G.codeRows.find(r => Math.abs(e.y - r.y) < 16 && Math.abs(e.x - W / 2) < 210);
+        if (row) { const ce = G.codeEntry; G.codeEntry = null; startFatality(ce.codes[row.code], ce.who, ce.foe); break; }
+      }
+    }
+    if (G.codeEntry) {
       G.codeEntry.t -= realDt;
       if (G.codeEntry.t <= 0) this.finishFail(true);
     }
@@ -476,7 +482,8 @@ const Fight = {
       this.phase = 'finish'; this.t = 0; G.wins[wi]++;
       setTimeout(() => { G.slow = 1; this.banner('FINISH HIM!!', '#ff3b2f', 2.4); Audio.say('Finish him!', 0.9, 0.1); Audio.sfx('dizzy');
         const codes = CODES[att.key][G.versus ? 0 : G.stageIdx];
-        G.codeEntry = { who: att, foe: def, codes, d: '', t: 8, max: 8 }; att.set('idle', att.def.idle[0], 8); att.vx = 0; att.digits = []; Input.take(att.pad); }, 700);
+        const secs = isTouch() ? 11 : 8;
+        G.codeEntry = { who: att, foe: def, codes, d: '', t: secs, max: secs }; att.set('idle', att.def.idle[0], 8); att.vx = 0; att.digits = []; Input.take(att.pad); }, 700);
       return;
     }
     def.ko = true; def.set('launch', 'launch', 6); def.grounded = false; def.vy = -560; def.vx = -def.face * 300;
@@ -566,13 +573,20 @@ G.spawnFire = function (f) {
   Audio.sfx('fireball');
   G.projectiles.push({ owner: f, kind: 'fire', x: f.x + f.face * 70, y: -150, vx: f.face * 560, dmg: 1.5, t: 0, alive: true });
 };
+// Codes are read leniently: a repeated direction only has to be pushed once
+// (668 works as right, up), and a stray push that fits no code is ignored
+// instead of failing, so the stick on a phone is forgiving. Only the timer fails.
+const squash = s => s.replace(/(.)\1+/g, '$1');
 G.codeDigit = function (d) {
   const ce = G.codeEntry; if (!ce) return;
-  ce.d += d; Audio.sfx('code', ce.d.length);
-  const codes = Object.keys(ce.codes);
-  if (ce.codes[ce.d]) { const kind = ce.codes[ce.d]; G.codeEntry = null; startFatality(kind, ce.who, ce.foe); return; }
-  if (!codes.some(c => c.startsWith(ce.d))) Fight.finishFail(false);
+  const codes = Object.keys(ce.codes), fits = s => codes.find(c => squash(c).startsWith(squash(s)));
+  let next = ce.d + d;
+  if (!fits(next)) { if (!fits(String(d))) return; next = String(d); }   // ignore the stray, or start again from it
+  ce.d = next; Audio.sfx('code', ce.d.length);
+  const hit = codes.find(c => squash(c) === squash(ce.d));
+  if (hit) { const kind = ce.codes[hit]; G.codeEntry = null; startFatality(kind, ce.who, ce.foe); }
 };
+G.codeRows = [];   // where each code is drawn, so a tap on it does the fatality
 function frillBlast(fr) {
   fr.set('blast', 'blastS', 16);
   setTimeout(() => { if (!G.fighting) return; fr.target = 'blastH'; fr.speed = 30; Audio.sfx('blast'); FX.flash = 0.4; FX.flashCol = '#bfe6ff';
@@ -668,15 +682,16 @@ function drawCodeEntry() {
   ctx.strokeStyle = '#a3201d'; ctx.lineWidth = 2; ctx.strokeRect(W / 2 - 200, 446, 400, 74);
   ctx.fillStyle = '#a3201d'; ctx.fillRect(W / 2 - 198, 514, 396 * Math.max(0, ce.t / ce.max), 4);
   ctx.restore();
+  G.codeRows = list.map(([code], i) => ({ code, y: top + 19 + i * 30 }));
   list.forEach(([code, kind], i) => {
-    const y = top + 19 + i * 30, ok = code.startsWith(ce.d);
+    const y = top + 19 + i * 30, ok = squash(code).startsWith(squash(ce.d));
     const col = ok ? '#ffdd55' : '#6b5f50';
     text(FATAL_NAMES[kind], W / 2 - 20, y, 20, col, { align: 'right', spacing: 2 });
     text(codeArrows(code, face), W / 2 + 4, y, 28, col, { font: FONT.dos, weight: 400, align: 'left' });
   });
   const s = codeArrows(ce.d, face);
   text(s || '_', W / 2, 476, 36, '#ffffff', { font: FONT.dos, weight: 400 });
-  text(isTouch() ? 'FOLLOW A CODE ON THE PAD · ● = P BUTTON' : 'FOLLOW A CODE WITH THE ARROWS OR NUMBER PAD · ● = PUNCH', W / 2, 505, 14, '#c9b9a0', { spacing: 1 });
+  text(isTouch() ? 'TAP A FATALITY, OR FOLLOW ITS CODE ON THE STICK' : 'FOLLOW A CODE WITH THE ARROWS OR NUMBER PAD · ● = PUNCH', W / 2, 505, 14, '#c9b9a0', { spacing: 1 });
 }
 
 /* ------------------------------------------------------------ pause */
@@ -872,6 +887,14 @@ cv.addEventListener('pointerdown', e => {
 });
 addEventListener('touchstart', () => { Input.touch = true; document.body.classList.add('touch'); }, { passive: true });
 
+// phones: go full screen on the first tap (browsers only allow it from a tap)
+function goFull() {
+  const d = document.documentElement, fs = d.requestFullscreen || d.webkitRequestFullscreen;
+  if (!matchMedia('(pointer: coarse)').matches || !fs || document.fullscreenElement || document.webkitFullscreenElement) return;
+  try { const r = fs.call(d); if (r && r.catch) r.catch(() => {}); } catch (e) {}
+}
+addEventListener('pointerdown', goFull, { once: true, capture: true });
+
 // back to the Shogun Classics menu (the folder above this game)
 function toMenu(e) {
   if (e && e.preventDefault) e.preventDefault();
@@ -886,6 +909,7 @@ function frame(now) {
   G.time += dt; G.frameDt = dt;
   Input.pollPads();
   document.body.classList.toggle('two', Input.twoP);
+  Input.fourWay = !!G.codeEntry;   // during FINISH HIM the stick reads only up, down, left and right
   document.body.classList.toggle('front', G.scene === Title || G.scene === Power);   // corner MENU link only on the title screens
   const evs = Input.takeMenu();
   try {
