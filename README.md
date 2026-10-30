@@ -4,6 +4,12 @@ Three Shogun fighting games, 1996 to 2026, in one collection you can play in a b
 
 **Play: https://lucidium2000.github.io/Shogun-Classics/**
 
+<p align="center">
+  <a href="shogun-1996/"><img src="covers/shogun-1996.jpg" width="30%" alt="Shogun (1996) box art"></a>
+  <a href="shogun-remastered/"><img src="covers/shogun-remastered.jpg" width="30%" alt="Shogun The Remake box art"></a>
+  <a href="shogun-ii/"><img src="covers/shogun-ii.jpg" width="30%" alt="Shogun II box art"></a>
+</p>
+
 | Game | Year | What it is |
 | --- | --- | --- |
 | [Shogun](shogun-1996/) | 1996 | The original QBasic game by Mystical Software, running its real source in a small QBasic interpreter written in JavaScript. A "Restored" switch fixes the 1996 bugs; "Original" runs the files as found. |
@@ -19,7 +25,7 @@ index.html              collection menu
 shogun-1996/            Shogun (1996), one self-contained page
 shogun-remastered/      Shogun Remastered, one self-contained page
 shogun-ii/              Shogun II Restored: page, JS host, engine and data pack
-covers/                 menu artwork
+covers/                 box art used on the menu
 source/
   launcher/             menu source
   shogun-1996/          original .BAS files, interpreter (engine.js), page template
