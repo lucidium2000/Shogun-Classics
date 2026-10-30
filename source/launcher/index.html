@@ -90,10 +90,13 @@ h1 { position: relative; margin: 0; font-family: var(--display); font-weight: 80
 kbd { font-family: var(--pixel); font-size: 18px; color: var(--ink); border: 1px solid var(--line); border-radius: 3px; padding: 0 5px; background: var(--panel); }
 footer { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 18px; color: var(--muted); font-size: 15px; letter-spacing: .04em; text-align: center; }
 footer a { color: var(--ink); }
-.music { position: fixed; z-index: 5; top: calc(10px + env(safe-area-inset-top, 0px)); right: max(12px, env(safe-area-inset-right, 0px));
+.corner { position: fixed; z-index: 5; top: calc(10px + env(safe-area-inset-top, 0px)); right: max(12px, env(safe-area-inset-right, 0px));
+  display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+.fshint { max-width: 190px; font-size: 14px; line-height: 1.3; text-align: right; color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 4px; padding: 6px 9px; }
+.music {
   font-family: var(--pixel); font-size: 18px; letter-spacing: .1em; color: var(--muted); background: var(--panel);
   border: 1px solid var(--line); border-radius: 4px; padding: 3px 10px; cursor: pointer; }
-.music:hover, .music:focus-visible { color: var(--ink); border-color: var(--muted); outline: none; }
+.music:hover, .music:focus-visible, .music.fs:hover { color: var(--ink); border-color: var(--muted); outline: none; }
 .music[aria-pressed="true"] { color: var(--ink); }
 .credits { flex-basis: 100%; color: var(--ink); font-size: 16px; text-wrap: balance; }
 
@@ -109,7 +112,11 @@ footer a { color: var(--ink); }
 }
 </style>
 
-<button type="button" class="music" id="music" aria-pressed="false">&#9834; MUSIC OFF</button>
+<div class="corner">
+  <button type="button" class="music fs" id="fullscreen" aria-pressed="false">&#9974; FULL SCREEN</button>
+  <button type="button" class="music" id="music" aria-pressed="false">&#9834; MUSIC OFF</button>
+  <p class="fshint" id="fshint" hidden>This browser can't go full screen from a page. On iPhone, tap Share, then Add to Home Screen, and open Shogun from there.</p>
+</div>
 
 <div class="wrap">
   <header>
@@ -214,6 +221,19 @@ footer a { color: var(--ink); }
     try { const r = fs.call(d); if (r && r.catch) r.catch(() => {}); } catch (e) {}
   }
   addEventListener('pointerdown', goFull, { once: true, capture: true });
+  // the full-screen button works everywhere the browser allows it
+  const fsBtn = document.getElementById('fullscreen'), fsHint = document.getElementById('fshint');
+  const isFull = () => !!(document.fullscreenElement || document.webkitFullscreenElement);
+  const fsShow = () => { const on = isFull(); fsBtn.setAttribute('aria-pressed', on); fsBtn.innerHTML = on ? '&#9974; EXIT FULL SCREEN' : '&#9974; FULL SCREEN'; };
+  fsBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    const d = document.documentElement, enter = d.requestFullscreen || d.webkitRequestFullscreen, exit = document.exitFullscreen || document.webkitExitFullscreen;
+    if (isFull()) { exit && exit.call(document); return; }
+    if (!enter) { fsHint.hidden = !fsHint.hidden; return; }
+    try { const r = enter.call(d); if (r && r.catch) r.catch(() => { fsHint.hidden = false; }); } catch (err) { fsHint.hidden = false; }
+  });
+  document.addEventListener('fullscreenchange', fsShow); document.addEventListener('webkitfullscreenchange', fsShow);
+  if (navigator.standalone || matchMedia('(display-mode: fullscreen), (display-mode: standalone)').matches) fsBtn.hidden = true;
 
   // title music at 70% (through WebAudio, since phones ignore <audio> volume); browsers start it on the first tap or key
   const btn = document.getElementById('music');
