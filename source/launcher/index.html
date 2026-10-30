@@ -111,75 +111,85 @@ footer a { color: var(--ink); }
   .game.sel .play::before, .game:hover .play::before, .game.chosen, .game.chosen .play::before, .game.sel, .game.sel .cover { animation: none; }
   .game:hover, .game:focus-visible, .game.sel { transform: none; }
 }
-/* 30th anniversary intro: plays over the menu on arrival, any tap or key skips it */
-.intro { position: fixed; inset: 0; z-index: 40; overflow: hidden; background: #000; display: grid; place-items: center; cursor: pointer;
-  padding: 24px max(16px, env(safe-area-inset-right, 0px)) 24px max(16px, env(safe-area-inset-left, 0px)); }
-.intro::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: repeating-linear-gradient(0deg, rgba(0,0,0,.28) 0 1px, transparent 1px 3px); }
-.intro canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
-.intro .rays { position: absolute; left: 50%; top: 50%; width: 220vmax; height: 220vmax; margin: -110vmax 0 0 -110vmax; opacity: 0;
-  background: repeating-conic-gradient(from 0deg, rgba(232, 180, 70, .16) 0deg 7deg, transparent 7deg 18deg);
-  -webkit-mask: radial-gradient(circle, #000 0, transparent 46%); mask: radial-gradient(circle, #000 0, transparent 46%);
-  animation: raysIn .8s ease-out 3.1s forwards, spin 40s linear infinite; }
-.intro .core { position: relative; display: grid; justify-items: center; text-align: center; gap: 4px; }
-.intro .pre { font-family: var(--pixel); font-size: clamp(18px, 3.4vw, 26px); letter-spacing: .4em; padding-left: .4em; color: var(--muted);
-  opacity: 0; animation: fadeUp .6s ease-out .2s forwards, fadeOut .4s ease-in 2.7s forwards; }
-.intro .count { font-family: var(--pixel); font-size: clamp(90px, 22vw, 200px); line-height: .9; color: var(--red); letter-spacing: .04em;
-  font-variant-numeric: tabular-nums; text-shadow: 0 0 30px rgba(200, 40, 30, .6); opacity: 0;
-  animation: fadeUp .4s ease-out .9s forwards, countOut .35s ease-in 2.95s forwards; }
-.intro .big { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -62%); display: grid; justify-items: center; gap: 0; width: max-content; max-width: 92vw; }
-.intro .thirty { position: relative; font-family: var(--display); font-weight: 800; font-size: clamp(150px, 36vw, 330px); line-height: .82;
-  background: linear-gradient(180deg, #fff6d8 0%, #f3c552 38%, #b0711c 62%, #f7d77a 80%, #8a5212 100%); -webkit-background-clip: text; background-clip: text; color: transparent;
-  filter: drop-shadow(0 4px 0 #6d140f) drop-shadow(0 0 34px rgba(243, 197, 82, .45)); opacity: 0; transform: scale(3);
-  animation: slam .45s cubic-bezier(.2, .9, .3, 1.2) 3.05s forwards; }
-.intro .thirty::after { content: ""; position: absolute; inset: 0; background: linear-gradient(105deg, transparent 35%, rgba(255,255,255,.85) 50%, transparent 65%) -200% 0 / 200% 100% no-repeat;
-  -webkit-background-clip: text; background-clip: text; color: transparent; animation: shine 2.6s ease-in-out 3.7s infinite; }
-.intro .thirty .th { display: inline-block; vertical-align: top; margin: .1em 0 0 .04em; font-size: .27em; line-height: 1; letter-spacing: .02em; }
-.intro .ribbon { margin-top: 6px; font-family: var(--body); font-weight: 700; font-size: clamp(22px, 5vw, 42px); letter-spacing: .32em; padding: 4px .2em 4px .52em;
-  color: #fff; background: var(--red); box-shadow: 0 0 0 2px #f3c552, 0 10px 30px rgba(0,0,0,.6); white-space: nowrap;
-  clip-path: inset(0 50% 0 50%); animation: ribbon .45s ease-out 3.55s forwards; }
-.intro .years { margin-top: 12px; font-family: var(--pixel); font-size: clamp(22px, 4.4vw, 34px); letter-spacing: .5em; padding-left: .5em; color: #f3c552;
-  opacity: 0; animation: fadeUp .5s ease-out 4.1s forwards; }
-.intro .line { margin-top: 8px; font-family: var(--display); font-weight: 800; font-size: clamp(26px, 6vw, 54px); letter-spacing: .14em; padding-left: .14em; color: var(--ink);
-  text-shadow: 0 3px 0 var(--red); opacity: 0; animation: fadeUp .6s ease-out 4.6s forwards; }
-.intro .start { position: absolute; left: 0; right: 0; bottom: calc(8vh + env(safe-area-inset-bottom, 0px)); font-family: var(--pixel); font-size: clamp(24px, 4.6vw, 34px);
-  letter-spacing: .3em; padding-left: .3em; color: #fff; text-align: center; opacity: 0; animation: fadeUp .4s ease-out 5.4s forwards; }
-.intro .start span { animation: blink 1s steps(2) 5.8s infinite; }
-.intro .skip { position: absolute; right: max(14px, env(safe-area-inset-right, 0px)); bottom: calc(12px + env(safe-area-inset-bottom, 0px)); font-family: var(--pixel); font-size: 17px;
-  letter-spacing: .14em; color: var(--muted); animation: fadeOut .3s 5.4s forwards; }
-.intro .flash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; animation: flash .6s ease-out 3.05s; }
-.intro.out { animation: introOut .55s ease-in forwards; }
-.intro.out .flash { animation: flash .45s ease-out; }
+/* 30th anniversary intro, styled like the games: a DOS boot, the years rolling to 2026,
+   a sword slash, the three boxes, then ROUND 30 / FIGHT!. Any tap or key skips it. */
+.intro { position: fixed; inset: 0; z-index: 40; overflow: hidden; background: #000; cursor: pointer; }
+.intro::after { content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 9; background: repeating-linear-gradient(0deg, rgba(0,0,0,.3) 0 1px, transparent 1px 3px); }
+.intro canvas { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 6; pointer-events: none; }
+.intro .dos { position: absolute; left: max(18px, env(safe-area-inset-left, 0px)); right: 18px; top: calc(18px + env(safe-area-inset-top, 0px));
+  font-family: var(--pixel); font-size: clamp(17px, 2.6vw, 24px); line-height: 1.25; color: #c0c0c0; white-space: pre-wrap; animation: cut .01s 2.9s forwards; }
+.intro .dos b { color: #52eeee; font-weight: 400; }
+.intro .cursor { display: inline-block; width: .55em; height: 1em; vertical-align: -.15em; background: #c0c0c0; animation: blink .5s steps(2) infinite; }
+.intro .count { position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-50%); text-align: center; font-family: var(--pixel);
+  font-size: clamp(100px, 24vw, 230px); line-height: 1; color: var(--red); font-variant-numeric: tabular-nums; text-shadow: 3px 0 #52eeee, -3px 0 #c8281e, 0 0 30px rgba(200,40,30,.6);
+  opacity: 0; animation: on .01s 1.5s forwards, cut .01s 2.9s forwards; }
+.intro .slash { position: absolute; left: -20%; top: 50%; width: 140%; height: 10px; z-index: 7; transform: rotate(-14deg) scaleX(0); transform-origin: left center;
+  background: linear-gradient(90deg, transparent, #fff 30%, #fff 70%, transparent); box-shadow: 0 0 18px #fff, 0 0 40px var(--red);
+  animation: slash .22s ease-out 2.82s forwards, cut .3s 3.15s forwards; }
+.intro .flash { position: absolute; inset: 0; z-index: 8; background: #fff; opacity: 0; pointer-events: none; animation: flash .5s ease-out 2.95s; }
+.intro .scene { position: absolute; inset: 0; display: grid; place-items: center; opacity: 0; animation: on .01s 2.95s forwards, shake .4s linear 2.95s; }
+.intro .scene::before { content: ""; position: absolute; inset: 0; background: radial-gradient(ellipse 70% 55% at 50% 45%, rgba(200,40,30,.45), transparent 70%); }
+.intro .boxes { position: absolute; inset: 0; display: flex; justify-content: center; align-items: center; gap: 2vw; opacity: .5; }
+.intro .boxes img { width: min(30vw, 260px); aspect-ratio: 3 / 4; object-fit: cover; border-radius: 3px; box-shadow: 0 16px 40px #000; filter: brightness(.7) contrast(1.1); opacity: 0; }
+.intro .boxes img:nth-child(1) { animation: boxL .35s cubic-bezier(.2,.9,.3,1.1) 3.05s forwards; }
+.intro .boxes img:nth-child(2) { animation: boxM .35s cubic-bezier(.2,.9,.3,1.1) 3.2s forwards; }
+.intro .boxes img:nth-child(3) { animation: boxR .35s cubic-bezier(.2,.9,.3,1.1) 3.35s forwards; }
+.intro .logo { position: relative; z-index: 2; display: grid; justify-items: center; text-align: center; gap: 2px; }
+.intro .logo .kanji { top: -30%; color: rgba(200, 40, 30, .35); font-size: clamp(130px, 30vw, 300px); }
+.intro .yrs { position: relative; font-family: var(--body); font-weight: 700; font-style: italic; font-size: clamp(24px, 5.4vw, 46px); letter-spacing: .12em; color: #fff;
+  text-shadow: 0 3px 0 #000; opacity: 0; animation: fadeUp .35s ease-out 3.5s forwards; }
+.intro .yrs em { font-style: italic; color: var(--red); font-size: 1.9em; line-height: .9; vertical-align: -.12em; -webkit-text-stroke: 2px #fff; paint-order: stroke fill; }
+.intro .logo h2 { position: relative; margin: 0; font-family: var(--display); font-weight: 800; font-size: clamp(64px, 16vw, 150px); letter-spacing: .1em; padding-left: .1em; line-height: 1;
+  color: #fff; text-shadow: 0 4px 0 var(--red), 0 0 40px rgba(200,40,30,.6), 0 10px 30px #000; opacity: 0; transform: scale(2.6); animation: slam .4s cubic-bezier(.2,.9,.3,1.2) 3.0s forwards; }
+.intro .dates { position: relative; font-family: var(--pixel); font-size: clamp(22px, 4.4vw, 34px); letter-spacing: .4em; padding-left: .4em; color: #52eeee; text-shadow: 0 2px 0 #000;
+  opacity: 0; animation: fadeUp .35s ease-out 3.7s forwards; }
+.intro .round { position: absolute; z-index: 5; left: 0; right: 0; top: 76%; transform: translateY(-50%); text-align: center; pointer-events: none;
+  font-family: var(--body); font-weight: 700; font-style: italic; text-transform: uppercase; color: #ffd84a; -webkit-text-stroke: 3px #000; paint-order: stroke fill; text-shadow: 0 6px 0 #7a120c; }
+.intro .round span { display: block; opacity: 0; }
+.intro .round .r { font-size: clamp(56px, 13vw, 120px); animation: callout 1s ease-out 4.25s forwards; }
+.intro .round .f { position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-50%); font-size: clamp(90px, 22vw, 210px); color: #fff; text-shadow: 0 6px 0 var(--red), 0 0 40px var(--red);
+  animation: fight .9s ease-out 5.15s forwards; }
+.intro .start { position: absolute; z-index: 5; left: 0; right: 0; bottom: calc(7vh + env(safe-area-inset-bottom, 0px)); font-family: var(--pixel); font-size: clamp(24px, 4.6vw, 34px);
+  letter-spacing: .3em; padding-left: .3em; color: #fff; text-align: center; text-shadow: 0 2px 0 #000; opacity: 0; animation: fadeUp .3s ease-out 5.9s forwards; }
+.intro .start span { animation: blink 1s steps(2) 6.2s infinite; }
+.intro .skip { position: absolute; z-index: 5; right: max(14px, env(safe-area-inset-right, 0px)); bottom: calc(12px + env(safe-area-inset-bottom, 0px)); font-family: var(--pixel); font-size: 17px;
+  letter-spacing: .14em; color: var(--muted); animation: cut .3s 5.9s forwards; }
+.intro.out { animation: introOut .45s ease-in forwards; }
+.intro.out .flash { animation: flash .4s ease-out; }
+@keyframes on { to { opacity: 1; } }
+@keyframes cut { to { opacity: 0; visibility: hidden; } }
 @keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
-@keyframes fadeOut { to { opacity: 0; } }
-@keyframes countOut { to { opacity: 0; transform: scale(.4); filter: blur(6px); } }
-@keyframes slam { 0% { opacity: 0; transform: scale(3); } 70% { opacity: 1; transform: scale(.94); } 100% { opacity: 1; transform: scale(1); } }
-@keyframes ribbon { to { clip-path: inset(0 0 0 0); } }
-@keyframes shine { 0% { background-position: -200% 0; } 60%, 100% { background-position: 200% 0; } }
-@keyframes raysIn { to { opacity: 1; } }
-@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes slash { to { transform: rotate(-14deg) scaleX(1); } }
+@keyframes slam { 0% { opacity: 0; transform: scale(2.6); } 70% { opacity: 1; transform: scale(.95); } 100% { opacity: 1; transform: scale(1); } }
+@keyframes boxL { from { opacity: 0; transform: translateX(-60vw) rotate(-20deg); } to { opacity: 1; transform: rotate(-8deg) translateY(10px); } }
+@keyframes boxM { from { opacity: 0; transform: translateY(-60vh); } to { opacity: 1; transform: none; } }
+@keyframes boxR { from { opacity: 0; transform: translateX(60vw) rotate(20deg); } to { opacity: 1; transform: rotate(8deg) translateY(10px); } }
+@keyframes callout { 0% { opacity: 0; transform: scale(2); } 15% { opacity: 1; transform: scale(1); } 80% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: scale(1.1); } }
+@keyframes fight { 0% { opacity: 0; transform: translateY(-50%) scale(3); } 18% { opacity: 1; transform: translateY(-50%) scale(1); } 75% { opacity: 1; } 100% { opacity: 0; transform: translateY(-50%) scale(1.3); } }
 @keyframes flash { 0% { opacity: .95; } 100% { opacity: 0; } }
-@keyframes introOut { to { opacity: 0; transform: scale(1.12); } }
-@keyframes shake { 0%, 100% { translate: 0 0; } 20% { translate: -8px 4px; } 40% { translate: 7px -5px; } 60% { translate: -5px -3px; } 80% { translate: 4px 5px; } }
-.intro .core { animation: shake .35s linear 3.35s; }
+@keyframes introOut { to { opacity: 0; transform: scale(1.08); } }
+@keyframes shake { 0%, 100% { translate: 0 0; } 20% { translate: -10px 5px; } 40% { translate: 8px -6px; } 60% { translate: -6px -3px; } 80% { translate: 5px 6px; } }
 @media (prefers-reduced-motion: reduce) {
-  .intro *, .intro .thirty::after { animation-duration: 1ms !important; animation-delay: 0s !important; animation-iteration-count: 1 !important; }
-  .intro .pre, .intro .count { display: none; }
+  .intro *, .intro *::before { animation-duration: 1ms !important; animation-delay: 0s !important; animation-iteration-count: 1 !important; }
+  .intro .round { display: none; }
 }
 </style>
 
 <div class="intro" id="intro" role="dialog" aria-label="Shogun 30th anniversary">
+  <div class="dos" id="dos" aria-hidden="true"></div>
+  <div class="count" id="count" aria-hidden="true">1996</div>
+  <div class="scene">
+    <div class="boxes" aria-hidden="true"><img src="covers/shogun-1996.jpg" alt=""><img src="covers/shogun-remastered.jpg" alt=""><img src="covers/shogun-ii.jpg" alt=""></div>
+    <div class="logo">
+      <div class="kanji" aria-hidden="true">将軍</div>
+      <div class="yrs"><em>30</em> YEARS OF</div>
+      <h2>SHOGUN</h2>
+      <div class="dates">1996 &ndash; 2026</div>
+    </div>
+  </div>
+  <div class="round" aria-hidden="true"><span class="r">Round 30</span><span class="f">Fight!</span></div>
+  <div class="slash" aria-hidden="true"></div>
   <canvas id="sparks" aria-hidden="true"></canvas>
-  <div class="rays" aria-hidden="true"></div>
-  <div class="core">
-    <div class="pre">MYSTICAL SOFTWARE</div>
-    <div class="count" id="count" aria-hidden="true">1996</div>
-  </div>
-  <div class="big">
-    <div class="thirty">30<span class="th">TH</span></div>
-    <div class="ribbon">ANNIVERSARY</div>
-    <div class="years">1996 &middot; 2026</div>
-    <div class="line">SHOGUN</div>
-  </div>
   <div class="start"><span id="startLabel">PRESS START</span></div>
   <div class="skip">TAP TO SKIP</div>
   <div class="flash"></div>
@@ -234,7 +244,7 @@ footer a { color: var(--ink); }
 
   <footer>
     <span class="credits">Mystical Software</span>
-    <span>&copy; 1996&ndash;2026 Chris &middot; Mystical Software</span>
+    <span>&copy; 1996&ndash;2026 Mystical Software</span>
     <span>MIT License</span>
     <a href="https://github.com/lucidium2000/Shogun-Classics" target="_blank" rel="noopener">Source on GitHub</a>
   </footer>
@@ -391,18 +401,27 @@ footer a { color: var(--ink); }
   play();   // works right away where the browser allows it
   addEventListener('pageshow', () => { if (want && track.paused && ctx) play(); });
 
-  // 30th anniversary intro: years roll from 1996 to 2026, the big 30 slams in with sparks,
-  // then PRESS START. Any tap, key or pad button goes to the menu (and starts the music).
+  // 30th anniversary intro: a DOS boot, the years roll from 1996 to 2026, a sword slash,
+  // the logo and boxes, ROUND 30 / FIGHT!, then PRESS START. Any tap, key or pad button goes to the menu (and starts the music).
   let intro = document.getElementById('intro');
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   if (matchMedia('(hover: none)').matches) { document.getElementById('startLabel').textContent = 'TAP TO START'; }
   const count = document.getElementById('count');
   const t0 = performance.now();
+  // the 1996 boot: type out the command that started it all
+  const dos = document.getElementById('dos');
+  const bootText = 'MYSTICAL SOFTWARE (C) 1996\n\nC:\\>CD SHOGUN\nC:\\SHOGUN>QBASIC /RUN SHOGUN.BAS';
+  (function type() {
+    if (!intro) return;
+    const n = Math.floor(Math.max(0, performance.now() - t0 - 150) / 22);
+    dos.innerHTML = bootText.slice(0, n).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace('MYSTICAL SOFTWARE', '<b>MYSTICAL SOFTWARE</b>') + '<span class="cursor"></span>';
+    if (n <= bootText.length) requestAnimationFrame(type);
+  })();
   (function roll() {
     if (!intro) return;
-    const k = Math.min(1, Math.max(0, (performance.now() - t0 - 1100) / 1700));
+    const k = Math.min(1, Math.max(0, (performance.now() - t0 - 1600) / 1150));
     count.textContent = 1996 + Math.round(30 * (1 - Math.pow(1 - k, 3)));
-    if (k >= 0.999) count.style.color = '#f3c552';
+    if (k >= 0.999) count.style.color = '#fff';
     if (k < 1) requestAnimationFrame(roll);
   })();
   // embers that burst out when the 30 lands, then drift up
@@ -412,13 +431,13 @@ footer a { color: var(--ink); }
   sizeCv(); addEventListener('resize', sizeCv);
   function ember(x, y, fast) {
     const a = Math.random() * Math.PI * 2, v = fast ? 3 + Math.random() * 9 : 0.3 + Math.random() * 0.8;
-    return { x, y, vx: Math.cos(a) * v, vy: fast ? Math.sin(a) * v : -0.6 - Math.random(), life: 1, size: 1 + Math.random() * 2.5, hue: 30 + Math.random() * 25 };
+    return { x, y, vx: Math.cos(a) * v, vy: fast ? Math.sin(a) * v : -0.6 - Math.random(), life: 1, size: 1 + Math.random() * 2.5, hue: Math.random() * 30 };
   }
   function sparks() {
     if (!intro) return;
     const t = performance.now() - t0, W = innerWidth, H = innerHeight;
-    if (!burst && t > 3150) { burst = true; for (let i = 0; i < (reduce ? 0 : 160); i++) parts.push(ember(W / 2, H * 0.44, true)); }
-    if (t > 3150 && parts.length < 90 && !reduce) parts.push(ember(Math.random() * W, H + 10, false));
+    if (!burst && t > 2950) { burst = true; for (let i = 0; i < (reduce ? 0 : 180); i++) parts.push(ember(W * (0.15 + Math.random() * 0.7), H / 2 + (W / 2 - Math.random() * W) * 0.25, true)); }
+    if (t > 3000 && parts.length < 70 && !reduce) parts.push(ember(Math.random() * W, H + 10, false));
     g2.clearRect(0, 0, W, H);
     g2.globalCompositeOperation = 'lighter';
     parts = parts.filter(p => p.life > 0);
@@ -432,9 +451,10 @@ footer a { color: var(--ink); }
   sparks();
   // a taiko hit and a rising fanfare for the way in
   function fanfare() {
-    tone(90, 40, 0, 0.6, 'sine', 0.7); noise(0, 0.3, 0.35);
-    [392, 523, 659, 784].forEach((f, i) => tone(f, f, 0.08 + i * 0.07, 0.16, 'square', 0.12));
-    tone(1047, 1047, 0.38, 0.5, 'square', 0.12); tone(1319, 1319, 0.38, 0.5, 'triangle', 0.1);
+    noise(0, 0.12, 0.4); tone(2400, 300, 0, 0.12, 'sawtooth', 0.08);      // sword swish
+    tone(90, 40, 0.05, 0.6, 'sine', 0.7); noise(0.05, 0.3, 0.35);          // taiko hit
+    [262, 311, 392, 523].forEach((f, i) => tone(f, f, 0.12 + i * 0.06, 0.14, 'square', 0.12));
+    tone(523, 523, 0.38, 0.4, 'square', 0.1); tone(784, 784, 0.38, 0.4, 'square', 0.08);
   }
   function endIntro() {
     if (!intro || intro.classList.contains('out')) return;

@@ -15,12 +15,13 @@ except the items below, which belong to their own authors and keep their own ter
   web shim written for this port that imitates the Allegro game library's API;
   they contain no Allegro code. Allegro itself is giftware.
 
-What was removed for the public release: the original Shogun II build played
-"It's a Long Road" from the *Rambo: First Blood* soundtrack on the YOU LOSE screen
-and the ending, and its stages shipped with MIDI files borrowed from other games.
-Those are copyrighted by others, so this public build leaves the lose screen
-silent and replaces the unused MIDI files with silent placeholders. The game's
-music is the Shogun title song and Chris's own tracks.
+Third-party music: the YOU LOSE screen and the ending play "It's a Long Road"
+from the *Rambo: First Blood* soundtrack, as the original Shogun II did. It is
+copyright its owners, is not covered by this repository's MIT license, and is
+included only because this is a free, non-commercial fan release. The stages
+originally shipped with MIDI files borrowed from other games; those are replaced
+with silent placeholders. The rest of the game's music is the Shogun title song
+and Chris's own tracks.
 
 Fighter images: Keero and Corbin are filmed photos of the Shogun crew. Shōkei,
 Wan'fu, Yamana, Frill and Onikage are AI-generated pictures of fictional people
