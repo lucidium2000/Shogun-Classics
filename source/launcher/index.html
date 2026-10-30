@@ -67,6 +67,14 @@ h1 { position: relative; margin: 0; font-family: var(--display); font-weight: 80
 .game:hover .cover, .game:focus-visible .cover, .game.sel .cover { filter: none; }
 .game:hover .play::before, .game:focus-visible .play::before, .game.sel .play::before { opacity: 1; transform: none; animation: blink 1s steps(2) infinite; }
 @keyframes blink { 50% { opacity: .2; } }
+/* the chosen card breathes: a slow swell of light in its own colour */
+.game.sel { animation: breathe 3.2s ease-in-out infinite; }
+.game.sel .cover { animation: breatheArt 3.2s ease-in-out infinite; }
+@keyframes breathe {
+  0%, 100% { transform: translateY(-4px) scale(1); box-shadow: 0 0 0 1px var(--c), 0 0 14px color-mix(in srgb, var(--c) 22%, transparent), 0 18px 40px rgba(0,0,0,.55); }
+  50% { transform: translateY(-7px) scale(1.025); box-shadow: 0 0 0 2px var(--c), 0 0 46px color-mix(in srgb, var(--c) 50%, transparent), 0 26px 52px rgba(0,0,0,.6); }
+}
+@keyframes breatheArt { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(1.12) saturate(1.08); } }
 .game.chosen { animation: chosen .52s steps(2) both; }
 .game.chosen .play::before { animation: blink .12s steps(2) infinite; }
 @keyframes chosen { 0%, 50% { box-shadow: 0 0 0 3px var(--c), 0 0 60px var(--c); } 25%, 75% { box-shadow: 0 0 0 1px var(--c); } 100% { box-shadow: 0 0 0 3px var(--c), 0 0 80px var(--c); } }
@@ -89,7 +97,7 @@ footer a { color: var(--ink); }
 @media (hover: none) { .hint .keys { display: none; } }
 @media (prefers-reduced-motion: reduce) {
   .game, .game .cover, .play::before { transition: none; }
-  .game.sel .play::before, .game:hover .play::before, .game.chosen, .game.chosen .play::before { animation: none; }
+  .game.sel .play::before, .game:hover .play::before, .game.chosen, .game.chosen .play::before, .game.sel, .game.sel .cover { animation: none; }
   .game:hover, .game:focus-visible, .game.sel { transform: none; }
 }
 </style>
