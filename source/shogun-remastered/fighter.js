@@ -95,14 +95,23 @@ class Fighter {
     else { this.set('dash', 'sUpperS', 24); this.vx = 0; Audio.sfx('dash'); }
     return true;
   }
+  // a grunt in this fighter's voice: Frill's is a woman's, the rest share the male set,
+  // pitched a little lower for Wan'fu and higher for Yamana. Not every swing, so it doesn't nag.
+  grunt(kind) {
+    const now = performance.now();
+    if (kind === 'atk' && (Math.random() > 0.45 || now - (this.gruntAt || 0) < 900)) return;
+    if (kind === 'hurt' && now - (this.gruntAt || 0) < 350) return;
+    this.gruntAt = now;
+    Audio.grunt(this.key === 'frill' ? 'f' : 'm', kind, { wanfu: 0.86, yamana: 1.08 }[this.key] || 1);
+  }
   doPunch() {
     const pp = this.def.punches[this.punchAlt++ % this.def.punches.length];
-    this.move = this.def.punch; this.movePoses = pp; this.set('attack', pp[0], 30); this.vx = this.face * 260;
+    this.move = this.def.punch; this.movePoses = pp; this.set('attack', pp[0], 30); this.vx = this.face * 260; this.grunt('atk');
     Audio.sfx(this.key === 'shokei' ? 'whoosh' : 'whoosh', this.key === 'shokei');
   }
-  doUpper() { this.move = this.def.upper; this.movePoses = this.def.upperP; this.set('attack', this.def.upperP[0], 30); this.vx = this.face * 300; Audio.sfx('whoosh'); }
+  doUpper() { this.move = this.def.upper; this.movePoses = this.def.upperP; this.set('attack', this.def.upperP[0], 30); this.vx = this.face * 300; Audio.sfx('whoosh'); this.grunt('atk'); }
   doJump(dir) { this.set('jump', this.def.jump, 14); this.grounded = false; this.vy = -780; this.vx = dir * 230; Audio.sfx('jump'); }
-  doJumpKick() { this.state = 'jumpKick'; this.target = this.def.kick; this.speed = 26; this.hitDone = false; this.move = MOVES.jumpKick; Audio.sfx('whoosh'); }
+  doJumpKick() { this.state = 'jumpKick'; this.target = this.def.kick; this.speed = 26; this.hitDone = false; this.move = MOVES.jumpKick; Audio.sfx('whoosh'); this.grunt('atk'); }
 
   /* ----------------------------------------------------- enemy AI */
   brain(G, foe, dt) {
@@ -132,7 +141,7 @@ class Fighter {
   }
   attack(name, fast) {
     const m = this.def.moves[name]; this.taken = 0;
-    this.move = fast ? Object.assign({}, m, { st: 0.12 }) : m; this.movePoses = m.p; this.set('attack', m.p[0], 14); this.vx = 0;
+    this.move = fast ? Object.assign({}, m, { st: 0.12 }) : m; this.movePoses = m.p; this.set('attack', m.p[0], 14); this.vx = 0; this.grunt('atk');
     if (m.whoosh) setTimeout(() => Audio.sfx('whoosh'), m.st * 600);
   }
 

@@ -349,6 +349,16 @@ const Audio = (() => {
     src.buffer = buf; g.gain.value = 1.4; src.connect(g); g.connect(sfxBus); src.start();
     clipSrc = src; src.onended = () => { if (clipSrc === src) clipSrc = null; };
   };
+  // fighters' grunts (Chris's recordings): 'm' male, 'f' Frill; kind 'atk', 'hurt' or 'ko'.
+  // They play on their own, so they never cut off the announcer.
+  A.grunt = function (voice, kind, rate) {
+    if (!A.on || !A.ctx) return;
+    const pool = kind === 'ko' ? [`g${voice}ko`] : [1, 2, 3, 4, 5].map(i => `g${voice}${i}`).filter(k => clipBufs[k]);
+    const buf = clipBufs[pool[Math.floor(Math.random() * pool.length)]]; if (!buf) return;
+    const src = A.ctx.createBufferSource(), g = A.ctx.createGain();
+    src.buffer = buf; src.playbackRate.value = (rate || 1) * (0.96 + Math.random() * 0.08);
+    g.gain.value = kind === 'atk' ? 0.8 : 1.1; src.connect(g); g.connect(sfxBus); src.start();
+  };
   A.say = function (text, rate, pitch) {
     if (!A.on || !A.voice || !window.speechSynthesis) return;
     try {

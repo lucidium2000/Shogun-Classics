@@ -467,7 +467,7 @@ const Fight = {
       return;
     }
     def.hp = Math.max(0, def.hp - m.dmg); def.dmgHold = 0.5;
-    Audio.sfx(m.sfx || 'punch');
+    Audio.sfx(m.sfx || 'punch'); def.grunt(def.hp <= 0 ? 'ko' : 'hurt');
     const pow = m.dmg / 2;
     FX.blood(hx, hy, -def.face, pow); FX.spark(hx, hy, m.proj === 'blast' ? '#bfe6ff' : '#ffe6b0', 6 + m.dmg * 4);
     if (m.proj === 'fire') FX.ring(hx, hy, '#ffb050', 70);
@@ -615,7 +615,7 @@ function frillThrow(fr, victim) {
   setTimeout(() => {
     fr.target = 'slam'; fr.speed = 20;
     victim.scripted = false; victim.freeRot = false; victim.grounded = false; victim.vy = 900; victim.vx = fr.face * 60;
-    victim.hp = Math.max(0, victim.hp - 3); victim.dmgHold = 0.5;
+    victim.hp = Math.max(0, victim.hp - 3); victim.dmgHold = 0.5; victim.grunt(victim.hp <= 0 ? 'ko' : 'hurt');
     setTimeout(() => {
       Audio.sfx('fall'); Audio.sfx('crunch'); FX.shake = 14; FX.blood(victim.x, GY - 30, 0, 1.5); FX.dust(victim.x, GY, 16);
       if (victim.hp <= 0) Fight.ko(fr, victim); else { victim.set('down', 'down', 12); victim.pose.rot = -88; }
