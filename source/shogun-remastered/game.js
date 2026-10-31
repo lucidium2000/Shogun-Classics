@@ -771,6 +771,8 @@ const Ending = {
     setTimeout(() => { if (G.scene === Ending) Audio.play('T200 O0E O0E O0E.O1E O1G O1G O2G O3F O1E', { voice: 'brass' }); }, 2600);
     this.f = new Fighter(G.hero, 330, 1, false, 0); this.f.set('victory', this.f.def.victory, 3); G.stage = Stages.make(2);
     Audio.clipSeq(['n_' + G.hero, 'wins'], NAMES[G.hero].replace('Ō', 'O') + ' wins');
+    // Chris's recorded winning message for beating the whole game
+    setTimeout(() => { if (G.scene === Ending) Audio.clip('champion', 'You are the champion of the Shotakan Takamara'); }, 2600);
   },
   update(dt, evs) { this.t += dt; this.f.update(G, dt, this.f); if (this.t > 4 && evs.some(e => e.m === 'ok' || e.m === 'tap')) go(Title); },
   draw() {
