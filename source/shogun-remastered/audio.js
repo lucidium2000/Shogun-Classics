@@ -349,6 +349,19 @@ const Audio = (() => {
     src.buffer = buf; g.gain.value = 1.4; src.connect(g); g.connect(sfxBus); src.start();
     clipSrc = src; src.onended = () => { if (clipSrc === src) clipSrc = null; };
   };
+  // several recorded lines back to back, e.g. a name then "Wins!"
+  A.clipSeq = function (names, text) {
+    if (!A.on || !A.voice) return;
+    if (!A.ctx || names.some(n => !clipBufs[n])) { if (text) A.say(text); return; }
+    if (window.speechSynthesis) speechSynthesis.cancel();
+    try { if (clipSrc) clipSrc.stop(); } catch (e) {}
+    let t = A.ctx.currentTime + 0.02;
+    for (const n of names) {
+      const src = A.ctx.createBufferSource(), g = A.ctx.createGain();
+      src.buffer = clipBufs[n]; g.gain.value = 1.4; src.connect(g); g.connect(sfxBus); src.start(t);
+      t += clipBufs[n].duration + 0.06; clipSrc = src;
+    }
+  };
   // fighters' grunts (Chris's recordings): 'm' male, 'f' Frill; kind 'atk', 'hurt' or 'ko'.
   // They play on their own, so they never cut off the announcer.
   A.grunt = function (voice, kind, rate) {
