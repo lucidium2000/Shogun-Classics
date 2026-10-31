@@ -745,7 +745,9 @@ const VersusEnd = {
   },
 };
 const GameOver = {
-  enter() { this.t = 0; this.sel = 0; Audio.music(null); Audio.play('T250 O1E- O1E- O0E O0E O0G- O0E', { voice: 'brass' }); this.f = new Fighter(ENEMIES[G.stageIdx], 560, -1, false, 0); this.f.set('victory', this.f.def.victory, 4); Audio.clip('youlose', 'Game over', 0.8, 0.1); },
+  enter() { this.t = 0; this.sel = 0; Audio.music(null); Audio.play('T250 O1E- O1E- O0E O0E O0G- O0E', { voice: 'brass' }); this.f = new Fighter(ENEMIES[G.stageIdx], 560, -1, false, 0); this.f.set('victory', this.f.def.victory, 4); Audio.clip('youlose', 'Game over', 0.8, 0.1);
+    // Chris's recorded final losing message
+    setTimeout(() => { if (G.scene === GameOver) Audio.clip('defeat', 'You have fallen, weak-willed warrior'); }, 1900); },
   update(dt, evs) {
     this.t += dt; this.f.update(G, dt, this.f);
     const l = [['FIGHT AGAIN', () => startStage(G.stageIdx)], ['TITLE', () => go(Title)]]; this.l = l;
