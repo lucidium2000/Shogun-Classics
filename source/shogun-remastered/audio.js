@@ -193,8 +193,8 @@ const Audio = (() => {
   S.punch = () => { const t = now(); noise(t, 0.09, sfxBus, 'bandpass', 1400, 400, 1.2, 0.7); osc(t, 'sine', 160, 60, 0.12, sfxBus, 0.9); };
   S.heavy = () => { const t = now(); noise(t, 0.16, sfxBus, 'lowpass', 2400, 300, 1, 0.9); osc(t, 'sine', 120, 40, 0.22, sfxBus, 1); V.taiko(t, 0.5, sfxBus, 60); };
   S.block = () => { const t = now(); osc(t, 'square', 1800, 1200, 0.07, sfxBus, 0.18); noise(t, 0.06, sfxBus, 'highpass', 3000, 0, 1, 0.4); };
-  S.whoosh = (hi) => { const t = now(); noise(t, 0.16, sfxBus, 'bandpass', hi ? 1800 : 900, hi ? 4000 : 2400, 2.5, 0.35, 0.05); };
-  S.slash = () => { const t = now(); noise(t, 0.2, sfxBus, 'highpass', 2500, 7000, 1.5, 0.5, 0.01); const x = osc(t + 0.02, 'sine', 3520, 3300, 0.6, sfxBus, 0.06); send(x.g, 0.6); };
+  S.whoosh = (hi) => { const t = now(); noise(t, 0.2, sfxBus, 'bandpass', hi ? 1800 : 900, hi ? 4000 : 2400, 2.5, 0.8, 0.04); };
+  S.slash = () => { const t = now(); noise(t, 0.24, sfxBus, 'highpass', 2200, 7000, 1.5, 1.1, 0.01); noise(t, 0.18, sfxBus, 'bandpass', 900, 2600, 2, 0.6, 0.02); const x = osc(t + 0.02, 'sine', 3520, 3300, 0.6, sfxBus, 0.06); send(x.g, 0.6); };
   S.sliceHit = () => { const t = now(); S.slash(); noise(t, 0.2, sfxBus, 'lowpass', 1200, 200, 1, 0.8); };
   S.jump = () => { const t = now(); noise(t, 0.12, sfxBus, 'bandpass', 600, 1500, 2, 0.25, 0.03); };
   S.land = () => { const t = now(); osc(t, 'sine', 90, 40, 0.15, sfxBus, 0.6); noise(t, 0.1, sfxBus, 'lowpass', 500, 0, 1, 0.3); };

@@ -158,7 +158,7 @@ class Fighter {
       case 'walk': { const ph = Math.sin(G.time * (this.def.walk / 22)); this.target = ph > 0 ? 'walk1' : 'walk2'; this.speed = 9; break; }
       case 'attack': {
         const m = this.move;
-        if (this.t >= m.st && this.target === this.movePoses[0]) { this.target = this.movePoses[1]; this.speed = 34; if (m.sfx === 'slash') Audio.sfx('slash'); }
+        if (this.t >= m.st && this.target === this.movePoses[0]) { this.target = this.movePoses[1]; this.speed = 34; if (m.sfx === 'slash' || this.look.weapon === 'katana') Audio.sfx('slash'); }
         if (this.t >= m.st && this.t < m.st + m.act && !this.hitDone) G.tryHit(this, foe, m);
         if (this.t >= m.st + m.act) this.speed = 9;
         if (this.t >= m.st + m.act + m.rec) this.set('idle', this.def.idle[0], 10);
