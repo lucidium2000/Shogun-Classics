@@ -145,6 +145,21 @@ sub(r'("< select background >".*?\n\tif \( )(\(key\[p2_spunch\]\) \|\| \(key\[p2
 sub(r'(\nstatic int web_sdir, web_sdir_new ;\n)',
     r'\1static int web_sok ;\nstatic int web_press(int down) { int fresh = down && !web_sok ; web_sok = down ; return fresh ; }\n', expect=1)
 
+# Throw specials (Frill's Ribbon Throw, v34): a char.ini with rush_throw = 1
+# turns the rush into a grab.  When it connects it can't be blocked: the
+# victim is hoisted off the floor and thrown down, using the engine's own
+# airborne-hit fall (which also does the most damage), like Frill plucking
+# the jump kick out of the air in the 1996 game.
+sub(r'(\n\s*p2\.rush\.offy = get_config_int \( sectn , "rush_offy" , 10 \) ;)',
+    r'\1\n   web_rthrow2 = get_config_int ( sectn , "rush_throw" , 0 ) ;', expect=1)
+sub(r'(\n\s*p1\.rush\.offy = get_config_int \( sectn , "rush_offy" , 10 \) ;)',
+    r'\1\n   web_rthrow1 = get_config_int ( sectn , "rush_throw" , 0 ) ;', expect=1)
+sub(r'(p1\.limoffy = spr1y \+ p1\.rush\.offy ;\n\n\t\t\t    )(if \( spr2y<\(sol2-5\) \))',
+    r'\1if ( web_rthrow1 ) { p1.simpact_ct = 10 ; actual2 = 20 ; spr2y = sol2 - 62 ; Hurt(1); }\n\n\t\t\t    else\n\n\t\t\t    \2', expect=1)
+sub(r'(p2\.limoffy = spr2y \+ p2\.rush\.offy ;\n\n\t\t\t    )(if \( spr1y<\(sol1-5\) \))',
+    r'\1if ( web_rthrow2 ) { p2.simpact_ct = 10 ; actual = 20 ; spr1y = sol1 - 62 ; Hurt(1); }\n\n\t\t\t    else\n\n\t\t\t    \2', expect=1)
+sub(r'(\nstatic int web_sok ;)', r'\nstatic int web_rthrow1 , web_rthrow2 ;\1', expect=1)
+
 # Fighter names under the life bars (the engine never drew them): read from
 # each fighter's char.ini when the fight loads, drawn with a small pixel font
 sub(r'(\n\tweb_stage_load\(bkgdname\[bgd\]\) ;)', r'\1\n\tweb_names(charname[sel1], charname[sel2]) ;', expect=1)

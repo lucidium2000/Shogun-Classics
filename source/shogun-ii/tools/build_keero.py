@@ -221,7 +221,8 @@ MOVES = {
     'outwin': [36, 37, 38, 39, 40, 41, 42, 41, 42, 41, 42],
     'wpunch': [47, 46, 46, 47],
     'spunch': ['45', 47, 46, 46, 47],
-    'wkick':  [4, 5, 5, 6, 7],
+    # light kick: the rising-fist photos (Chris, v33: swapped with the rush)
+    'wkick':  [56, 57, 58, 59, 60, 61, 62, 63],
     'skick':  [48, 49, 50, 51, 49],
     'gpunch': [12, 13, 14, 13, 12],
     'gkick':  [8, 9, 10, 11, 11, 10, 9, 8],
@@ -230,8 +231,8 @@ MOVES = {
     # plain fireball: hands gather at the hip, then push out
     'fireb':  [43, 44, 44, 45, 45, 43],
     'smove':  [52, 53, 54, 55, 55, 54, 53, 52],
-    # uppercut (engine "rush" slot): 56-58 gather, 59-63 rise
-    'rush':   [56, 57, 58, 59, 60, 61, 62, 63],
+    # lunge punch (engine "rush" slot, back-forward-punch): 4-7 step in and strike
+    'rush':   [4, 5, 5, 6, 7],
 }
 FILE = {'static': 'static', 'walk': 'walk', 'jump': 'jump', 'crouch': 'crouch', 'block': 'block',
         'gblock': 'gblock', 'hurt': 'hurt', 'ghurt': 'ghurt', 'ko': 'ko', 'intro': 'intro',
@@ -242,8 +243,8 @@ FILE = {'static': 'static', 'walk': 'walk', 'jump': 'jump', 'crouch': 'crouch', 
 LIFT = {'jump': 0, 'apunch': 0, 'akick': 0}
 
 ATTACKS = ['wpunch', 'spunch', 'wkick', 'skick', 'gpunch', 'gkick', 'apunch', 'akick']
-HIT = {'wpunch': 2, 'spunch': 3, 'wkick': 3, 'skick': 3, 'gpunch': 3, 'gkick': 4,
-       'apunch': 3, 'akick': 3, 'fireb': 4, 'smove': 3, 'rush': 7}
+HIT = {'wpunch': 2, 'spunch': 3, 'wkick': 8, 'skick': 3, 'gpunch': 3, 'gkick': 4,
+       'apunch': 3, 'akick': 3, 'fireb': 4, 'smove': 3, 'rush': 4}
 
 
 def build():
@@ -320,7 +321,7 @@ def build():
 
     fx, fy = reach(info['fireb'][3])
     smx, smy = reach(info['smove'][2])
-    ux, uy = reach(info['rush'][6])
+    ux, uy = reach(info['rush'][3])
     ini += [
         'fball_defx = 10', 'fball_defy = 10', 'fball_offx = 60', 'fball_offy = 12',
         f'smove_defx = 10', f'smove_defy = 10', f'smove_offx = {smx}', f'smove_offy = {smy}',
@@ -336,8 +337,8 @@ def build():
         'fball_h = 24', 'fball_dmg = 4', 'fball_w = 64', 'fball_nbf = 4', 'fball_spd = 2', 'fball_pix = 4',
         f'fball_cx = {fx - 14}', f'fball_cy = {fy - 12}',
         '',
-        '# Dragon Punch',
-        'rush = 1', f'rush_w = {widths["rush"]}', f'rush_nbf = {len(MOVES["rush"])}', 'rush_hit = 7', 'rush_spd = 5',
+        '# Lunge Punch (back, forward + punch)',
+        'rush = 1', f'rush_w = {widths["rush"]}', f'rush_nbf = {len(MOVES["rush"])}', 'rush_hit = 4', 'rush_spd = 5',
         'rush_rot = 1', 'rush_pix = 4', 'rush_dmg = 5', 'rush_exec = L R P *',
         '',
         'firebx = 0',
@@ -355,7 +356,7 @@ def build():
             'spunch_nbf = 5', 'spunch_spd = 6', 'spunch_hit = 3', 'spunch_dmg = 3',
             'wpunch_nbf = 4', 'wpunch_spd = 5', 'wpunch_hit = 2', 'wpunch_dmg = 2',
             'skick_nbf = 5', 'skick_spd = 6', 'skick_hit = 3', 'skick_dmg = 3',
-            'wkick_nbf = 5', 'wkick_spd = 5', 'wkick_hit = 3', 'wkick_dmg = 2',
+            'wkick_nbf = 8', 'wkick_spd = 3', 'wkick_hit = 8', 'wkick_dmg = 2',
             'apunch_nbf = 4', 'apunch_spd = 6', 'apunch_hit = 3',
             'gpunch_nbf = 5', 'gpunch_spd = 6', 'gpunch_hit = 3',
             'akick_nbf = 5', 'akick_spd = 6', 'akick_hit = 3',

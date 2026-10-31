@@ -25,7 +25,7 @@ from audit_frames import mask
 D = 'data/sprites/keero'
 T = 30                                  # headroom added on top (game pixels)
 K = 0.75                                # the cast shrink
-RUSH_LIFT = [0, 0, 0, 0, 4, 14, 26, 32]   # 56-59 gather on the ground, 60-63 rise
+RUSH_LIFT = [0, 0, 0, 0, 0]   # v33: the rush is now a ground lunge punch (no rise)
 KICK_LIFT = 16
 KICK_SCALE = 0.82
 KEY = np.array((255, 0, 255), np.uint8)
@@ -72,7 +72,7 @@ def main():
     # 2. uppercut rises
     for i, l in enumerate(RUSH_LIFT, 1):
         p = f'{D}/rush{i}.pcx'; save_pcx24(p, lift(load(p), l))
-    rx, ry = reach(load(f'{D}/rush7.pcx'))
+    rx, ry = reach(load(f'{D}/rush4.pcx'))
     # 3. the kick: mirrored photo 55, built at full size like the rest of him
     a, cx = bk.frame(55, flip=True)
     # the jump photo was shot closer to the camera: bring him back to his size
@@ -87,11 +87,11 @@ def main():
     kick = load(tmp)
     for i in (4, 5): save_pcx24(f'{D}/smove{i}.pcx', kick)
     kx, ky = reach(kick)
-    for k, v in (('rush_hit', 7), ('rush_offx', rx), ('rush_offy', ry),
+    for k, v in (('rush_hit', 4), ('rush_offx', rx), ('rush_offy', ry),
                  ('smove_hit', 4), ('smove_offx', kx), ('smove_offy', ky), ('smove_w', kick.shape[1])):
         ini = re.sub(rf'(?m)^{k}\s*=\s*-?\d+', f'{k} = {v}', ini) if re.search(rf'(?m)^{k}\s*=', ini) \
             else ini.rstrip('\r\n') + f'\r\n{k} = {v}\r\n'
-    ini = ini.replace('# Dragon Punch', '# Uppercut (1996)')
+    ini = ini.replace('# Dragon Punch', '# Lunge Punch (back, forward + punch)')
     ini = ini.rstrip('\r\n') + '\r\n# keero specials\r\n'
     open(f'{D}/char.ini', 'w', newline='').write(ini)
     print('keero: height', h0 + T, 'kick frame', kick.shape, 'reach', (kx, ky), 'uppercut reach', (rx, ry))
