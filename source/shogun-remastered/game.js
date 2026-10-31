@@ -196,12 +196,12 @@ const Title = {
     text('REMASTERED', W / 2 + 250, 72 + 7.4 * cell, 20, '#c9a24b', { spacing: 6 });
     hits = [];
     if (this.stage === 0) {
-      if (Math.sin(t * 4) > -0.2) text(isTouch() ? 'TAP PUNCH TO BEGIN' : 'PRESS (ENTER) TO BEGIN', W / 2, 400, 30, '#55ffff', { font: FONT.dos, weight: 400 });
+      if (Math.sin(t * 4) > -0.2) text(isTouch() ? 'TAP PUNCH TO BEGIN' : 'PRESS (ENTER) TO BEGIN', W / 2, 410, 30, '#55ffff', { font: FONT.dos, weight: 400 });
       hits.push({ x: 0, y: 0, w: W, h: H, on: () => {} });
     } else {
-      text('(1) OR (2) PLAYERS', W / 2, 364, 22, '#55ffff', { font: FONT.dos, weight: 400 });
+      text('(1) OR (2) PLAYERS', W / 2, 372, 22, '#55ffff', { font: FONT.dos, weight: 400 });
       const it = this.items(), gap = Math.min(193, (W - 40) / it.length);
-      it.forEach(([l, on], i) => button(l, W / 2 + (i - (it.length - 1) / 2) * gap, 412, gap - 15, 46, on, i === this.sel));   // clear of the era strip
+      it.forEach(([l, on], i) => button(l, W / 2 + (i - (it.length - 1) / 2) * gap, 430, gap - 15, 46, on, i === this.sel));
     }
     text('MYSTICAL SOFTWARE (C)1995-1996  ·  REMASTERED 2026', W / 2, 515, 16, '#5c8c8c', { font: FONT.dos, weight: 400, spacing: 1 });
   },
@@ -794,7 +794,7 @@ const GameOver = {
     text('G A M E   O V E R', W / 2, 80, 56, '#ff3b2f', { font: FONT.dos, weight: 400, glow: '#aa0000' });
     text('YOU HAVE FALLEN, WEAK-WILLED WARRIOR. THE SHOTAKAN', W / 2, 140, 26, '#ebe3d3', { font: FONT.dos, weight: 400 });
     text('TAKAMARA HAS NO PLACE FOR THOSE WHO CANNOT STAND.', W / 2, 170, 26, '#ebe3d3', { font: FONT.dos, weight: 400 });
-    hits = []; if (this.t > 1) (this.l || []).forEach(([l, on], i) => button(l, W / 2 - 120 + i * 240, 420, 220, 46, on, i === this.sel));   // above the era strip
+    hits = []; if (this.t > 1) (this.l || []).forEach(([l, on], i) => button(l, W / 2 - 120 + i * 240, 500, 220, 46, on, i === this.sel));
   },
 };
 const Ending = {
@@ -993,5 +993,5 @@ function frame(now) {
 }
 Input.bindTouch(document.getElementById('touch'));
 if (matchMedia('(pointer: coarse)').matches) document.body.classList.add('touch');
-if (window.ShogunEras) ShogunEras.init('remastered', { slim: true });
+if (window.ShogunEras) ShogunEras.init('remastered');
 resize(); go(Power); requestAnimationFrame(frame);

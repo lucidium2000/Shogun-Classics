@@ -103,12 +103,11 @@ body.touch.two #btnPause { width: 40px; height: 40px; }
 // Shogun Classics - https://github.com/lucidium2000/Shogun-Classics
 // Copyright (c) 1996-2026 Chris (lucidium2000) and Mystical Software. MIT License, see LICENSE.
 // Created with Corbin Hildreth, Jason Rudisill, Chance Kornegay and Elijah Matthew Cash.
-/* "Choose your era": the strip on each game's title and game-over screens that
+/* "Choose your era": a corner card on each game's title and game-over screens that
    jumps straight to the other two Shogun games. Same look in all three games.
    tools/eras.py inlines this file (and the cover thumbnails) into each page.
-   A game calls ShogunEras.init('1996' | 'remastered' | 'ii', { place, slim }) once
-   (place: an element to dock the strip inside, instead of the window; slim: the one-row size), then
-   ShogunEras.show('title' | 'over' | 'won' | null) whenever its screen changes. */
+   A game calls ShogunEras.init('1996' | 'remastered' | 'ii') once, then
+   ShogunEras.show('title' | 'over' | 'won' | 'end' | null) whenever its screen changes. */
 window.ShogunEras = (() => {
   const THUMBS = {"1996": "data:image/jpeg;base64,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", "remastered": "data:image/jpeg;base64,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", "ii": "data:image/jpeg;base64,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"};
   const GAMES = {
@@ -118,73 +117,55 @@ window.ShogunEras = (() => {
   };
   const ORDER = ['1996', 'ii', 'remastered'];
   const HEAD = {
-    // [heading, subline, short heading for the one-row size]
-    title: ['Choose your era', 'Same tournament, three decades of pixels', 'Choose your era'],
-    over: ['Defeated? Try another era', 'The tournament runs in three timelines', 'Defeated? Switch eras'],
-    won: ['Champion. Now conquer another era', 'Your legend continues elsewhere', 'Conquer another era'],
-    end: ['Fight on in another era', 'The tournament runs in three timelines', 'Fight on elsewhere'],
+    title: 'Choose your era',
+    over: 'Lost? Switch eras',
+    won: 'Conquer another era',
+    end: 'Fight on elsewhere',
   };
   const DELAY = { title: 1400, over: 2200, won: 5000, end: 2200 };   // let the screen land first
-  // one row: the heading stacks on the left, then the two games (big = desktop size)
-  const slim = (r, big) => `
-  ${r} .box { display: flex; align-items: center; gap: ${big ? 10 : 8}px; padding: ${big ? '7px 6px 7px 10px' : '5px 4px 5px 8px'}; }
-  ${r} .kick { flex: none; width: ${big ? 116 : 92}px; margin: 0; font-size: ${big ? 20 : 16}px; line-height: .95; letter-spacing: .06em; white-space: normal; text-align: center; }
-  ${r} .kick::before, ${r} .kick::after { display: none; }
-  ${r} .kick .l { display: none; } ${r} .kick .s { display: inline; }
-  ${r} .sub { display: none; }
-  ${r} .row { flex: 1; min-width: 0; gap: ${big ? 8 : 6}px; }
-  ${r} .x { position: static; flex: none; width: 22px; }
-  ${r} a { padding: ${big ? '5px 10px 5px 5px' : '3px 8px 3px 4px'}; gap: ${big ? 10 : 8}px; }
-  ${r} img { width: ${big ? 30 : 22}px; height: ${big ? 40 : 30}px; }
-  ${r} .n { font-size: ${big ? 20 : 16}px; letter-spacing: ${big ? '.05em' : '.02em'}; }
-  ${r} .y { font-size: ${big ? 18 : 16}px; }`;
+  // a small card in the top-right corner, clear of every game's own buttons
   const CSS = `
-#eras { position: fixed; z-index: 2147483000; left: 50%; bottom: max(14px, env(safe-area-inset-bottom, 0px));
-  width: min(560px, calc(100% - 32px)); transform: translate(-50%, 18px); opacity: 0; pointer-events: none;
+#eras { position: fixed; z-index: 2147483000; top: max(10px, env(safe-area-inset-top, 0px)); right: max(10px, env(safe-area-inset-right, 0px));
+  width: 222px; transform: translateX(24px); opacity: 0; pointer-events: none;
   transition: opacity .45s ease, transform .45s cubic-bezier(.2,.9,.3,1.2);
   font-family: "Barlow Condensed", "Arial Narrow", system-ui, sans-serif; color: #f1e6cf; line-height: normal; text-align: left; -webkit-tap-highlight-color: transparent; }
-#eras.on { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
-#eras .box { position: relative; padding: 9px 10px 10px; border: 1px solid #4a3626; border-radius: 8px;
-  background: linear-gradient(180deg, rgba(28,21,17,.94), rgba(12,9,8,.94)); box-shadow: 0 14px 40px rgba(0,0,0,.6), 0 0 0 1px rgba(0,0,0,.6);
+#eras.on { opacity: 1; transform: none; pointer-events: auto; }
+#eras .box { position: relative; padding: 7px 7px 8px; border: 1px solid #4a3626; border-radius: 8px;
+  background: linear-gradient(180deg, rgba(28,21,17,.94), rgba(12,9,8,.94)); box-shadow: 0 12px 32px rgba(0,0,0,.6), 0 0 0 1px rgba(0,0,0,.6);
   backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
-#eras .kick { display: flex; align-items: center; gap: 10px; margin: 0 26px 8px; font-family: "VT323", ui-monospace, monospace;
-  font-size: 21px; line-height: 1; letter-spacing: .14em; text-transform: uppercase; color: #e0a94a; white-space: nowrap; }
-#eras .kick::before, #eras .kick::after { content: ""; flex: 1; height: 1px; background: linear-gradient(90deg, transparent, #6b4a2c); }
-#eras .kick::after { background: linear-gradient(90deg, #6b4a2c, transparent); }
-#eras .kick span { overflow: hidden; text-overflow: ellipsis; }
-#eras .kick .s { display: none; }
-#eras .sub { display: block; margin: -4px 0 8px; text-align: center; font-size: 14px; letter-spacing: .08em; color: #a08f78; text-transform: uppercase; }
-#eras .row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-#eras a { --c: #f1e6cf; position: relative; display: flex; align-items: center; gap: 10px; min-width: 0; padding: 6px 10px 6px 6px;
+#eras .kick { margin: 0 24px 6px 3px; font-family: "VT323", ui-monospace, monospace; font-size: 19px; line-height: 1; letter-spacing: .1em;
+  text-transform: uppercase; color: #e0a94a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#eras .row { display: grid; gap: 5px; }
+#eras a { --c: #f1e6cf; position: relative; display: flex; align-items: center; gap: 9px; min-width: 0; padding: 4px 9px 4px 4px;
   color: inherit; text-decoration: none; background: #171210; border: 1px solid #34261e; border-left: 3px solid var(--c); border-radius: 5px;
   overflow: hidden; transition: transform .15s ease, border-color .15s ease, box-shadow .15s ease; }
-#eras a:hover, #eras a:focus-visible { transform: translateY(-2px); border-color: var(--c); box-shadow: 0 0 18px color-mix(in srgb, var(--c) 35%, transparent); outline: none; }
+#eras a:hover, #eras a:focus-visible { transform: translateX(-2px); border-color: var(--c); box-shadow: 0 0 16px color-mix(in srgb, var(--c) 35%, transparent); outline: none; }
 #eras a::after { content: ""; position: absolute; inset: 0; background: linear-gradient(100deg, transparent 30%, rgba(255,255,255,.16) 50%, transparent 70%);
   transform: translateX(-120%); pointer-events: none; }
 #eras.on a::after { animation: erasGlint 1.1s ease .5s 1 both; }
 #eras.on a + a::after { animation-delay: .7s; }
-#eras img { flex: none; width: 36px; height: 48px; object-fit: cover; border-radius: 2px; box-shadow: 0 0 0 1px rgba(255,255,255,.08); }
-#eras .t { display: flex; flex-direction: column; min-width: 0; line-height: 1.05; }
-#eras .y { font-family: "VT323", ui-monospace, monospace; font-size: 18px; letter-spacing: .1em; color: var(--c); }
-#eras .n { font-weight: 700; font-size: 20px; letter-spacing: .05em; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-#eras .go { margin-left: auto; flex: none; font-family: "VT323", ui-monospace, monospace; font-size: 20px; color: var(--c); }
-#eras .x { position: absolute; top: 3px; right: 4px; width: 26px; height: 26px; padding: 0; border: 0; background: none; color: #a08f78;
-  font: 20px/1 "VT323", ui-monospace, monospace; cursor: pointer; }
+#eras img { flex: none; width: 27px; height: 36px; object-fit: cover; border-radius: 2px; box-shadow: 0 0 0 1px rgba(255,255,255,.08); }
+#eras .t { display: flex; flex-direction: column; min-width: 0; line-height: 1.02; }
+#eras .y { font-family: "VT323", ui-monospace, monospace; font-size: 16px; letter-spacing: .1em; color: var(--c); }
+#eras .n { font-weight: 700; font-size: 18px; letter-spacing: .04em; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#eras .go { margin-left: auto; flex: none; font-family: "VT323", ui-monospace, monospace; font-size: 18px; color: var(--c); }
+#eras .x { position: absolute; top: 2px; right: 3px; width: 24px; height: 24px; padding: 0; border: 0; background: none; color: #a08f78;
+  font: 19px/1 "VT323", ui-monospace, monospace; cursor: pointer; }
 #eras .x:hover, #eras .x:focus-visible { color: #f1e6cf; outline: none; }
 @keyframes erasGlint { to { transform: translateX(120%); } }
-/* placed inside a game screen (the 1996 monitor): one row, docked to its bottom edge */
-#eras.inset { position: absolute; bottom: 12px; width: min(600px, calc(100% - 24px)); }
-${slim('#eras.inset', true)}
-/* one row on the window too, for a game whose own menu sits low on the screen */
-#eras.slim { width: min(600px, calc(100% - 32px)); }
-${slim('#eras.slim', true)}
-@media (max-height: 460px) {   /* phone held sideways: a small row between the on-screen sticks and buttons */
-  #eras, #eras.slim { width: min(480px, calc(100% - 380px)); min-width: 330px; bottom: max(6px, env(safe-area-inset-bottom, 0px)); }
-${slim('#eras')}${slim('#eras.slim')}${slim('#eras.inset')}
+@media (max-height: 460px) {   /* phone held sideways: a little smaller */
+  #eras { width: 190px; top: max(6px, env(safe-area-inset-top, 0px)); right: max(6px, env(safe-area-inset-right, 0px)); }
+  #eras .box { padding: 5px 5px 6px; }
+  #eras .kick { font-size: 16px; margin-bottom: 4px; }
+  #eras .row { gap: 4px; }
+  #eras a { padding: 2px 8px 2px 3px; gap: 7px; }
+  #eras img { width: 20px; height: 27px; }
+  #eras .n { font-size: 16px; }
+  #eras .y { font-size: 14px; }
 }
 @media (prefers-reduced-motion: reduce) { #eras, #eras a { transition: none; } #eras.on a::after { animation: none; } }`;
 
-  let self = null, el = null, kind = null, timer = 0, dismissed = null, place = null, slimOpt = false;
+  let self = null, el = null, kind = null, timer = 0, dismissed = null;
   const inMenu = () => { try { return parent !== window && parent.location.origin === location.origin; } catch (e) { return false; } };
   function go(id, e) {
     if (inMenu()) { e.preventDefault(); parent.postMessage('shogun:play:' + id, location.origin); }
@@ -200,7 +181,7 @@ ${slim('#eras')}${slim('#eras.slim')}${slim('#eras.inset')}
     }
     el = document.createElement('nav'); el.id = 'eras'; el.setAttribute('aria-label', 'Other Shogun games');
     const box = document.createElement('div'); box.className = 'box';
-    box.innerHTML = '<div class="kick"><span class="l"></span><span class="s"></span></div><span class="sub"></span><div class="row"></div>' +
+    box.innerHTML = '<div class="kick"></div><div class="row"></div>' +
       '<button type="button" class="x" aria-label="Hide">&#10005;</button>';
     const row = box.querySelector('.row');
     for (const id of ORDER) {
@@ -218,21 +199,17 @@ ${slim('#eras')}${slim('#eras.slim')}${slim('#eras.inset')}
     x.addEventListener('click', e => { e.stopPropagation(); dismissed = kind; el.classList.remove('on'); });
     for (const t of ['pointerdown', 'touchstart', 'mousedown']) x.addEventListener(t, e => e.stopPropagation());
     el.appendChild(box);
-    if (place) el.classList.add('inset');
-    if (slimOpt) el.classList.add('slim');
-    (place || document.body).appendChild(el);
+    document.body.appendChild(el);
   }
   function render() {
     const h = HEAD[kind]; if (!h) return;
-    el.querySelector('.kick .l').textContent = h[0];
-    el.querySelector('.kick .s').textContent = h[2];
-    el.querySelector('.sub').textContent = h[1];
+    el.querySelector('.kick').textContent = h;
     // after the 1996 ending ("TO BE CONTINUED IN SHOGUN II"), the sequel goes first
     const row = el.querySelector('.row'), order = kind === 'won' && self === '1996' ? ['ii', 'remastered'] : ORDER;
     for (const id of order) { const a = row.querySelector('a[data-g="' + id + '"]'); if (a) row.appendChild(a); }
   }
   return {
-    init(id, opts) { self = id; place = opts && opts.place || null; slimOpt = !!(opts && opts.slim); },
+    init(id) { self = id; },
     show(k) {
       k = k || null;
       if (k === kind) return;
@@ -2318,12 +2295,12 @@ const Title = {
     text('REMASTERED', W / 2 + 250, 72 + 7.4 * cell, 20, '#c9a24b', { spacing: 6 });
     hits = [];
     if (this.stage === 0) {
-      if (Math.sin(t * 4) > -0.2) text(isTouch() ? 'TAP PUNCH TO BEGIN' : 'PRESS (ENTER) TO BEGIN', W / 2, 400, 30, '#55ffff', { font: FONT.dos, weight: 400 });
+      if (Math.sin(t * 4) > -0.2) text(isTouch() ? 'TAP PUNCH TO BEGIN' : 'PRESS (ENTER) TO BEGIN', W / 2, 410, 30, '#55ffff', { font: FONT.dos, weight: 400 });
       hits.push({ x: 0, y: 0, w: W, h: H, on: () => {} });
     } else {
-      text('(1) OR (2) PLAYERS', W / 2, 364, 22, '#55ffff', { font: FONT.dos, weight: 400 });
+      text('(1) OR (2) PLAYERS', W / 2, 372, 22, '#55ffff', { font: FONT.dos, weight: 400 });
       const it = this.items(), gap = Math.min(193, (W - 40) / it.length);
-      it.forEach(([l, on], i) => button(l, W / 2 + (i - (it.length - 1) / 2) * gap, 412, gap - 15, 46, on, i === this.sel));   // clear of the era strip
+      it.forEach(([l, on], i) => button(l, W / 2 + (i - (it.length - 1) / 2) * gap, 430, gap - 15, 46, on, i === this.sel));
     }
     text('MYSTICAL SOFTWARE (C)1995-1996  ·  REMASTERED 2026', W / 2, 515, 16, '#5c8c8c', { font: FONT.dos, weight: 400, spacing: 1 });
   },
@@ -2916,7 +2893,7 @@ const GameOver = {
     text('G A M E   O V E R', W / 2, 80, 56, '#ff3b2f', { font: FONT.dos, weight: 400, glow: '#aa0000' });
     text('YOU HAVE FALLEN, WEAK-WILLED WARRIOR. THE SHOTAKAN', W / 2, 140, 26, '#ebe3d3', { font: FONT.dos, weight: 400 });
     text('TAKAMARA HAS NO PLACE FOR THOSE WHO CANNOT STAND.', W / 2, 170, 26, '#ebe3d3', { font: FONT.dos, weight: 400 });
-    hits = []; if (this.t > 1) (this.l || []).forEach(([l, on], i) => button(l, W / 2 - 120 + i * 240, 420, 220, 46, on, i === this.sel));   // above the era strip
+    hits = []; if (this.t > 1) (this.l || []).forEach(([l, on], i) => button(l, W / 2 - 120 + i * 240, 500, 220, 46, on, i === this.sel));
   },
 };
 const Ending = {
@@ -3115,7 +3092,7 @@ function frame(now) {
 }
 Input.bindTouch(document.getElementById('touch'));
 if (matchMedia('(pointer: coarse)').matches) document.body.classList.add('touch');
-if (window.ShogunEras) ShogunEras.init('remastered', { slim: true });
+if (window.ShogunEras) ShogunEras.init('remastered');
 resize(); go(Power); requestAnimationFrame(frame);
 
 </script>
