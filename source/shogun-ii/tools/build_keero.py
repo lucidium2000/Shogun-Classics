@@ -36,6 +36,21 @@ def cutout(n):
     pim = ImageEnhance.Contrast(ImageEnhance.Brightness(pim).enhance(1.15)).enhance(1.22)
     pim = ImageEnhance.Color(pim).enhance(1.12)
     im = np.array(pim)
+    clean = f'{SRC}/mask_c/P10100{n:02d}.png'
+    if os.path.exists(clean):
+        # a cut-out already cleaned by tools/keero_masks.py (two models,
+        # GrabCut, rug/floor/cable removal): just keep wall and rug colour
+        # out of the edge by giving the outer two pixels of the figure the
+        # colour of the nearest pixel further in
+        m = np.array(Image.open(clean).convert('L')) > 128
+        core = ndimage.binary_erosion(m, iterations=2)
+        if core.any():
+            _, (iy, ix) = ndimage.distance_transform_edt(~core, return_indices=True)
+            rim = m & ~core
+            src = im[iy[rim], ix[rim]].astype(np.float32)
+            im = im.copy()
+            im[rim] = (0.4 * im[rim] + 0.6 * src).astype(np.uint8)
+        return im, m
     m = np.array(Image.open(f'{SRC}/mask_h/P10100{n:02d}.png').convert('L')) > 128
     ys, xs = np.nonzero(m)
     top, bot = ys.min(), ys.max()
@@ -186,22 +201,22 @@ def opaque(can):
 # 2026-10-31: re-grouped by shooting order (Chris: the photos were taken in
 # series, so each move's photos sit together): 1-3 jump kick, 4-7 low kick,
 # 8-11 crouch kick, 12-14 crouch/jump punch, 15-16 hurt, 17-22 fall,
-# 23-33 intro (34-35, bent over a box, left out), 36-42 win, 43-45 fireball, 46-47 punch,
-# 48-51 strong kick, 52-55 Fatal Kick, 59-63 uppercut
+# 23-35 intro (ends with his bow, 34-35), 36-42 win, 43-45 fireball, 46-47 punch,
+# 48-51 strong kick, 52-55 Fatal Kick, 56-63 uppercut (56-58 gather, 59-63 rise)
 MOVES = {
     # fighting stance is the side-on guard (45); the "b"/"c" variants are the
     # same photo squashed a pixel or two so the stance breathes
     'static': ['45', '45b', '45c', '45b'],
     'walk':   ['45', 47, 4, 47, '45'],
-    'jump':   ['36', '49', '49', '49', '36'],
+    'jump':   ['45', '49', '49', '49', '45'],
     'crouch': [12],
     'block':  [38],
     'gblock': [13],
-    'hurt':   [15, 16, 15],
+    'hurt':   [15, 16, 18],
     'ghurt':  [13, 14],
-    'ko':     [17, 18, 19, 21, 22],
+    'ko':     [17, 19, 20, 21, 22],
     # walks in, squares up, drops into the side-on guard
-    'intro':  [23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 33, '45', '45', '45'],
+    'intro':  [23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, '45', '45'],
     # the front-facing poses are his victory celebration
     'outwin': [36, 37, 38, 39, 40, 41, 42, 41, 42, 41, 42],
     'wpunch': [47, 46, 46, 47],
@@ -215,8 +230,8 @@ MOVES = {
     # plain fireball: hands gather at the hip, then push out
     'fireb':  [43, 44, 44, 45, 45, 43],
     'smove':  [52, 53, 54, 55, 55, 54, 53, 52],
-    # dragon punch (engine "rush" slot): dip low, then the 60-63 uppercut
-    'rush':   [59, 60, 61, 62, 63, 63],
+    # uppercut (engine "rush" slot): 56-58 gather, 59-63 rise
+    'rush':   [56, 57, 58, 59, 60, 61, 62, 63],
 }
 FILE = {'static': 'static', 'walk': 'walk', 'jump': 'jump', 'crouch': 'crouch', 'block': 'block',
         'gblock': 'gblock', 'hurt': 'hurt', 'ghurt': 'ghurt', 'ko': 'ko', 'intro': 'intro',
@@ -228,7 +243,7 @@ LIFT = {'jump': 0, 'apunch': 0, 'akick': 0}
 
 ATTACKS = ['wpunch', 'spunch', 'wkick', 'skick', 'gpunch', 'gkick', 'apunch', 'akick']
 HIT = {'wpunch': 2, 'spunch': 3, 'wkick': 3, 'skick': 3, 'gpunch': 3, 'gkick': 4,
-       'apunch': 3, 'akick': 3, 'fireb': 4, 'smove': 3, 'rush': 3}
+       'apunch': 3, 'akick': 3, 'fireb': 4, 'smove': 3, 'rush': 7}
 
 
 def build():
@@ -305,7 +320,7 @@ def build():
 
     fx, fy = reach(info['fireb'][3])
     smx, smy = reach(info['smove'][2])
-    ux, uy = reach(info['rush'][3])
+    ux, uy = reach(info['rush'][6])
     ini += [
         'fball_defx = 10', 'fball_defy = 10', 'fball_offx = 60', 'fball_offy = 12',
         f'smove_defx = 10', f'smove_defy = 10', f'smove_offx = {smx}', f'smove_offy = {smy}',
@@ -322,7 +337,7 @@ def build():
         f'fball_cx = {fx - 14}', f'fball_cy = {fy - 12}',
         '',
         '# Dragon Punch',
-        'rush = 1', f'rush_w = {widths["rush"]}', 'rush_nbf = 6', 'rush_hit = 2', 'rush_spd = 5',
+        'rush = 1', f'rush_w = {widths["rush"]}', f'rush_nbf = {len(MOVES["rush"])}', 'rush_hit = 7', 'rush_spd = 5',
         'rush_rot = 1', 'rush_pix = 4', 'rush_dmg = 5', 'rush_exec = L R P *',
         '',
         'firebx = 0',
