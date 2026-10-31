@@ -509,7 +509,8 @@ const FONT = Uint8Array.from(atob("/*FONT*/"), c => c.charCodeAt(0));
   const screenText = () => { let s = ''; for (const c of screen.chars) s += c < 128 ? String.fromCharCode(c) : ' '; return s; };
   // the other two games, offered on the title screen and after the last fight
   if (window.ShogunEras) {
-    ShogunEras.init('1996');
+    // phones: beside the corner menu button; desktop: under the All games button, scrolling with the page
+    ShogunEras.init('1996', touchy ? { beside: $('opts') } : { beside: $('toMenu'), below: true });
     setInterval(() => {
       const t = started ? screenText() : '';
       ShogunEras.show(!started || t.includes('PRESS (ENTER) TO BEGIN') || t.includes('(1) OR (2) PLAYERS') ? 'title'

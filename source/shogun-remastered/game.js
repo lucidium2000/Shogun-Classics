@@ -993,5 +993,5 @@ function frame(now) {
 }
 Input.bindTouch(document.getElementById('touch'));
 if (matchMedia('(pointer: coarse)').matches) document.body.classList.add('touch');
-if (window.ShogunEras) ShogunEras.init('remastered');
+if (window.ShogunEras) ShogunEras.init('remastered', { beside: document.getElementById('btnMenu') });
 resize(); go(Power); requestAnimationFrame(frame);

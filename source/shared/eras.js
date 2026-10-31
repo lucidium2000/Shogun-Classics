@@ -4,7 +4,8 @@
 /* "Choose your era": a corner card on each game's title and game-over screens that
    jumps straight to the other two Shogun games. Same look in all three games.
    tools/eras.py inlines this file (and the cover thumbnails) into each page.
-   A game calls ShogunEras.init('1996' | 'remastered' | 'ii') once, then
+   A game calls ShogunEras.init('1996' | 'remastered' | 'ii', { beside, below }) once
+   (beside: its menu button, or a function returning it; below: sit under it, not to its right), then
    ShogunEras.show('title' | 'over' | 'won' | 'end' | null) whenever its screen changes. */
 window.ShogunEras = (() => {
   const THUMBS = /*THUMBS*/;
@@ -21,10 +22,10 @@ window.ShogunEras = (() => {
     end: 'Fight on elsewhere',
   };
   const DELAY = { title: 1400, over: 2200, won: 5000, end: 2200 };   // let the screen land first
-  // a small card in the top-right corner, clear of every game's own buttons
+  // a small card in the top-left corner, beside the game's own menu button
   const CSS = `
-#eras { position: fixed; z-index: 2147483000; top: max(10px, env(safe-area-inset-top, 0px)); right: max(10px, env(safe-area-inset-right, 0px));
-  width: 222px; transform: translateX(24px); opacity: 0; pointer-events: none;
+#eras { position: fixed; z-index: 2147483000; top: max(10px, env(safe-area-inset-top, 0px)); left: max(10px, env(safe-area-inset-left, 0px));
+  width: 222px; transform: translateX(-24px); opacity: 0; pointer-events: none;
   transition: opacity .45s ease, transform .45s cubic-bezier(.2,.9,.3,1.2);
   font-family: "Barlow Condensed", "Arial Narrow", system-ui, sans-serif; color: #f1e6cf; line-height: normal; text-align: left; -webkit-tap-highlight-color: transparent; }
 #eras.on { opacity: 1; transform: none; pointer-events: auto; }
@@ -37,7 +38,7 @@ window.ShogunEras = (() => {
 #eras a { --c: #f1e6cf; position: relative; display: flex; align-items: center; gap: 9px; min-width: 0; padding: 4px 9px 4px 4px;
   color: inherit; text-decoration: none; background: #171210; border: 1px solid #34261e; border-left: 3px solid var(--c); border-radius: 5px;
   overflow: hidden; transition: transform .15s ease, border-color .15s ease, box-shadow .15s ease; }
-#eras a:hover, #eras a:focus-visible { transform: translateX(-2px); border-color: var(--c); box-shadow: 0 0 16px color-mix(in srgb, var(--c) 35%, transparent); outline: none; }
+#eras a:hover, #eras a:focus-visible { transform: translateX(2px); border-color: var(--c); box-shadow: 0 0 16px color-mix(in srgb, var(--c) 35%, transparent); outline: none; }
 #eras a::after { content: ""; position: absolute; inset: 0; background: linear-gradient(100deg, transparent 30%, rgba(255,255,255,.16) 50%, transparent 70%);
   transform: translateX(-120%); pointer-events: none; }
 #eras.on a::after { animation: erasGlint 1.1s ease .5s 1 both; }
@@ -52,7 +53,7 @@ window.ShogunEras = (() => {
 #eras .x:hover, #eras .x:focus-visible { color: #f1e6cf; outline: none; }
 @keyframes erasGlint { to { transform: translateX(120%); } }
 @media (max-height: 460px) {   /* phone held sideways: a little smaller */
-  #eras { width: 190px; top: max(6px, env(safe-area-inset-top, 0px)); right: max(6px, env(safe-area-inset-right, 0px)); }
+  #eras { width: 190px; top: max(6px, env(safe-area-inset-top, 0px)); left: max(6px, env(safe-area-inset-left, 0px)); }
   #eras .box { padding: 5px 5px 6px; }
   #eras .kick { font-size: 16px; margin-bottom: 4px; }
   #eras .row { gap: 4px; }
@@ -63,7 +64,16 @@ window.ShogunEras = (() => {
 }
 @media (prefers-reduced-motion: reduce) { #eras, #eras a { transition: none; } #eras.on a::after { animation: none; } }`;
 
-  let self = null, el = null, kind = null, timer = 0, dismissed = null;
+  let self = null, el = null, kind = null, timer = 0, dismissed = null, beside = null, below = false;
+  // sit just right of (or under) the game's menu button when it is showing
+  function placeIt() {
+    if (!el) return;
+    const b = typeof beside === 'function' ? beside() : beside, r = b && b.getClientRects().length ? b.getBoundingClientRect() : null;
+    el.style.position = r && below ? 'absolute' : '';
+    el.style.left = r ? Math.round(below ? r.left + scrollX : r.right + 8) + 'px' : '';
+    el.style.top = r ? Math.round(below ? r.bottom + scrollY + 8 : r.top) + 'px' : '';
+  }
+  addEventListener('resize', placeIt);
   const inMenu = () => { try { return parent !== window && parent.location.origin === location.origin; } catch (e) { return false; } };
   function go(id, e) {
     if (inMenu()) { e.preventDefault(); parent.postMessage('shogun:play:' + id, location.origin); }
@@ -107,7 +117,7 @@ window.ShogunEras = (() => {
     for (const id of order) { const a = row.querySelector('a[data-g="' + id + '"]'); if (a) row.appendChild(a); }
   }
   return {
-    init(id) { self = id; },
+    init(id, opts) { self = id; beside = opts && opts.beside || null; below = !!(opts && opts.below); },
     show(k) {
       k = k || null;
       if (k === kind) return;
@@ -116,7 +126,7 @@ window.ShogunEras = (() => {
       if (!k) { if (el) el.classList.remove('on'); return; }
       timer = setTimeout(() => {
         if (kind !== k || dismissed === k || !document.body) return;
-        build(); render(); el.classList.add('on');
+        build(); render(); placeIt(); el.classList.add('on');
       }, DELAY[k] || 1500);
     },
     get kind() { return kind; },
