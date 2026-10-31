@@ -7,7 +7,7 @@ const cv = document.getElementById('cv'), ctx = cv.getContext('2d');
 const FONT = { disp: "'Shippori Mincho B1', 'Times New Roman', serif", hud: "'Barlow Condensed', 'Arial Narrow', sans-serif", dos: "'VT323', 'Courier New', monospace" };
 const store = { get(k, d) { try { const v = localStorage.getItem('shogun96r.' + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
   set(k, v) { try { localStorage.setItem('shogun96r.' + k, JSON.stringify(v)); } catch (e) { /* storage is optional */ } } };
-Retro.mode = store.get('sprites2', 'pixel');
+Retro.mode = store.get('sprites3', 'smooth'); // smooth by default (Chris, 2026-10-31); a new key so older saved picks don't override it
 
 const ENEMIES = ['wanfu', 'yamana', 'frill'];
 const NAMES = { keero: 'KEERO', shokei: 'SHŌKEI', wanfu: "WAN'FU", yamana: 'YAMANA', frill: 'FRILL' };
@@ -213,7 +213,7 @@ const Options = {
     return [[`SOUND: ${soundPref ? 'ON' : 'OFF'}`, () => { soundPref = !soundPref; Audio.setOn(soundPref); store.set('sound', soundPref); }],
       [`ANNOUNCER VOICE: ${Audio.voice ? 'ON' : 'OFF'}`, () => { Audio.voice = !Audio.voice; store.set('voice', Audio.voice); Audio.say('Shogun'); }],
       [`BLOOD: ${FX.gore ? 'ON' : 'OFF'}`, () => { FX.gore = !FX.gore; store.set('gore', FX.gore); }],
-      [`SPRITES: ${{ blocks: '1996 BLOCKS', pixel: 'PIXEL', smooth: 'SMOOTH' }[Retro.mode]}`, () => { Retro.mode = { blocks: 'pixel', pixel: 'smooth', smooth: 'blocks' }[Retro.mode]; store.set('sprites2', Retro.mode); }],
+      [`SPRITES: ${{ blocks: '1996 BLOCKS', pixel: 'PIXEL', smooth: 'SMOOTH' }[Retro.mode]}`, () => { Retro.mode = { blocks: 'pixel', pixel: 'smooth', smooth: 'blocks' }[Retro.mode]; store.set('sprites3', Retro.mode); }],
       [`DIFFICULTY: ${['EASY', '1996', 'HARD'][G.diff]}`, () => { G.diff = (G.diff + 1) % 3; store.set('diff', G.diff); }],
       ['BACK', () => go(this.back)]];
   },
