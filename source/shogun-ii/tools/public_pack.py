@@ -5,14 +5,14 @@
 silent stub (borrowed from other games and unused), then repack. The Rambo song
 stays in at Chris's call (2026-10-30, non-commercial fan release); pass
 --no-rambo to drop it, e.g. before anything is sold.
-Usage: python3 public_pack.py FULL-1.wasm FULL-2.wasm WORKDIR OUT-PREFIX [--no-rambo]"""
+Usage: python3 public_pack.py FULL-1.wasm FULL-2.wasm [FULL-3.wasm ...] WORKDIR OUT-PREFIX [--no-rambo]"""
 import glob, os, shutil, subprocess, sys
 here = os.path.dirname(os.path.abspath(__file__))
-a, b, work, out = sys.argv[1:5]
-no_rambo = '--no-rambo' in sys.argv[5:]
+*parts, work, out = [x for x in sys.argv[1:] if not x.startswith('--')]
+no_rambo = '--no-rambo' in sys.argv
 shutil.rmtree(work, ignore_errors=True); os.makedirs(work)
 game = os.path.join(work, 'game')
-subprocess.check_call([sys.executable, '-I', os.path.join(here, 'unpak.py'), a, b, game])
+subprocess.check_call([sys.executable, '-I', os.path.join(here, 'unpak.py'), *parts, game])
 if no_rambo:
     for f in glob.glob(os.path.join(game, 'music', 'rambo*.mp3')): os.remove(f)
 STUB = b'MThd\x00\x00\x00\x06\x00\x00\x00\x01\x00\x60MTrk\x00\x00\x00\x04\x00\xff\x2f\x00'
