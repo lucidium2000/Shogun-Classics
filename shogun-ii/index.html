@@ -73,6 +73,9 @@
   .sys button, .sys a { position: static; width: 100%; height: calc(var(--b) * .5); border-radius: 8px; font-size: calc(var(--b) * .18); letter-spacing: .05em; }
   .sys a { display: grid; place-items: center; border: 1px solid var(--line); background: var(--btn); color: var(--ink); text-decoration: none;
     font: 600 calc(var(--b) * .18) system-ui, sans-serif; }
+  /* MENU in blue so it stands out from the game buttons (Chris) */
+  .sys a.menu { background: #1f5fbf; border-color: #5b9bff; color: #fff; box-shadow: 0 0 10px rgba(70,140,255,.45); }
+  .sys a.menu:active { background: #2f74e0; }
   #help a { color: var(--ink); }
   /* two players on one phone: player 2 gets a mirrored d-pad and buttons on the right */
   .p2 { display: none; gap: 8px; align-items: flex-end; flex: none; }
