@@ -38,6 +38,15 @@ function patchSource(name, src, mode) {
     rep('RANDOMIZE TIMER\nGOTO NP\n', 'RANDOMIZE TIMER\n');
     rep('DECLARE SUB SHOGUNL2 (PN$)\n', 'DECLARE SUB SHOGUNL2 (PN$)\nDIM SHARED RTY\n');
   }
+  // Uppercutting Yamana: the second frame cleared the screen and then played its note, so the
+  // screen sat black for the length of the note. Play the note first, then redraw.
+  if (name === 'SHOGUN') rep('CLS : COLOR 4: PLAY "O0E": PRINT TAB(15)', 'PLAY "O0E": CLS : COLOR 4: PRINT TAB(15)');
+  // Frill was near unbeatable: he attacked on 3 rolls in 4 and countered every third punch.
+  // Now he attacks half the time and counters every fifth punch. His hits still hurt more than Wan'fu's.
+  if (name === 'CSHOGUN') {
+    rep('RT: RANDOMIZE TIMER: X% = INT(RND * 4)', 'RT: RANDOMIZE TIMER: X% = INT(RND * 6)');
+    rep('IF H = 3 THEN LET H = 0: GOTO RT', 'IF H = 5 THEN LET H = 0: GOTO RT');
+  }
   if (name === 'CSHOGUN') {
     rep('LET RTY = 1\nEND\nSHOGUNL4 (PN$)', 'RUN "A:WEND"\nSHOGUNL4 (PN$)');
     rep('CLS\nPRINT "WELL, WELL, "; PN$; ", I CAN SEE YOU ARE GOOD ENOUGH FOR MY LOWER"\nPRINT "STANDARD FIGHTERS, BUT SEE HOW YOU STAND UP AGAINST FRILL."\nPLAY "O0E O0E O0E":\nRUN "A:CSHOGUN"', 'RUN "A:WEND"');
