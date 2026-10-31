@@ -8,6 +8,7 @@
 const Audio = (() => {
   const A = { ctx: null, on: true, voice: true, musicVol: 0.32, sfxVol: 0.8, track: null };
   let master, musicBus, sfxBus, verb, noiseBuf;
+  const clipBufs = {};
 
   A.init = function () {
     if (A.ctx) { if (A.ctx.state === 'suspended') A.ctx.resume(); return; }
@@ -32,6 +33,12 @@ const Audio = (() => {
     noiseBuf = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
     const nd = noiseBuf.getChannelData(0);
     for (let i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1;
+    // the recorded announcer: decode each clip once
+    if (typeof VOICE_CLIPS !== 'undefined') for (const [k, b64] of Object.entries(VOICE_CLIPS)) {
+      const bin = atob(b64), u = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+      ctx.decodeAudioData(u.buffer, buf => { clipBufs[k] = buf; }, () => {});
+    }
   };
 
   A.setOn = function (on) {
@@ -330,6 +337,18 @@ const Audio = (() => {
     return en.find(v => /male|daniel|fred|alex|george|david|guy|ryan/i.test(v.name) && !/female/i.test(v.name)) || en[0] || vs[0];
   }
   if (window.speechSynthesis) speechSynthesis.onvoiceschanged = () => { vox = pickVoice(); };
+  // a recorded announcer line, or the speech voice saying the fallback text until it has loaded
+  let clipSrc = null;
+  A.clip = function (name, text, rate, pitch) {
+    if (!A.on || !A.voice) return;
+    const buf = clipBufs[name];
+    if (!buf || !A.ctx) { if (text) A.say(text, rate, pitch); return; }
+    if (window.speechSynthesis) speechSynthesis.cancel();
+    try { if (clipSrc) clipSrc.stop(); } catch (e) {}
+    const src = A.ctx.createBufferSource(), g = A.ctx.createGain();
+    src.buffer = buf; g.gain.value = 1.4; src.connect(g); g.connect(sfxBus); src.start();
+    clipSrc = src; src.onended = () => { if (clipSrc === src) clipSrc = null; };
+  };
   A.say = function (text, rate, pitch) {
     if (!A.on || !A.voice || !window.speechSynthesis) return;
     try {

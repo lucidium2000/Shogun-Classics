@@ -248,7 +248,7 @@ const Help = {
       ctx.fillStyle = '#a89c88'; ctx.fillText(r[2], 520, y); ctx.fillText(r[3], 690, y);
     });
     ctx.restore();
-    text('FINISH HIM!!  Enter a 1996 fatality code on the number pad: 8 up · 2 down · 4 back · 6 forward · 5 punch', W / 2, 400, 19, '#ff6a5a');
+    text("GRANT A WARRIOR'S MERCY!  Enter a 1996 fatality code on the number pad: 8 up · 2 down · 4 back · 6 forward · 5 punch", W / 2, 400, 19, '#ff6a5a');
     const f = Object.keys(G.found);
     text(f.length ? 'FATALITIES FOUND: ' + f.map(k => FATAL_NAMES[k]).join(' · ') : 'FATALITIES FOUND: none yet. The codes are in the 1996 source.', W / 2, 434, 18, '#c9a24b');
     text('2 PLAYERS (keyboard): P1 = W A S D + F punch, G special · P2 = arrows + L punch, K special', W / 2, 470, 17, '#8c8070');
@@ -370,7 +370,8 @@ const Fight = {
     p.x = Stages.ARENA / 2 - 170; e.x = Stages.ARENA / 2 + 170; p.face = 1; e.face = -1;
     G.cam = Stages.ARENA / 2 - W / 2; G.projectiles = []; FX.reset(); G.codeEntry = null; G.fatal = null; G.pit = null;
     G.fighting = false; this.phase = 'round'; this.t = 0; G.slow = 1; G.combo = { n: 0, t: 0 }; this.result = null;
-    Audio.say(['Round one', 'Round two', 'Round three', 'Round four', 'Round five'][Math.min(4, G.round - 1)]);
+    const rn = ['Round one', 'Round two', 'Round three', 'Round four', 'Round five'][Math.min(4, G.round - 1)];
+    if (G.round <= 2) Audio.clip('round' + G.round, rn); else Audio.say(rn);
     Audio.sfx('gong');
   },
   update(dt, evs) {
@@ -383,7 +384,7 @@ const Fight = {
     const p = G.p, e = G.e;
     if (G.stage.update) G.stage.update(dt);
     // round flow
-    if (this.phase === 'round' && this.t > 1.3) { this.phase = 'fightcall'; this.t = 0; Audio.say(G.stageN === 2 && !G.versus ? 'Fight!' : 'Fight', 1, 0.3); Audio.sfx('taiko'); }
+    if (this.phase === 'round' && this.t > 1.3) { this.phase = 'fightcall'; this.t = 0; Audio.clip('fight', 'Fight!', 1, 0.3); Audio.sfx('taiko'); }
     if (this.phase === 'fightcall' && this.t > 0.6) { this.phase = 'fighting'; G.fighting = true; }
     // control
     p.control(G);
@@ -494,7 +495,7 @@ const Fight = {
       // FINISH HIM: the loser stays up, dazed
       def.hp = 0; def.set('dizzy', 'dizzy', 4); def.vx = -def.face * 260;
       this.phase = 'finish'; this.t = 0; G.wins[wi]++;
-      setTimeout(() => { G.slow = 1; this.banner('FINISH HIM!!', '#ff3b2f', 2.4); Audio.say('Finish him!', 0.9, 0.1); Audio.sfx('dizzy');
+      setTimeout(() => { G.slow = 1; this.banner("GRANT A WARRIOR'S MERCY", '#ff3b2f', 2.6); Audio.clip('mercy', "Grant a warrior's mercy", 0.9, 0.1); Audio.sfx('dizzy');
         const codes = CODES[att.key][G.versus ? 0 : G.stageIdx];
         const secs = isTouch() ? 11 : 8;
         G.codeEntry = { who: att, foe: def, codes, d: '', t: secs, max: secs }; att.set('idle', att.def.idle[0], 8); att.vx = 0; att.digits = []; Input.take(att.pad); }, 700);
@@ -511,9 +512,9 @@ const Fight = {
     if (!r.shown && this.t > 1.1) {
       r.shown = true;
       if (r.draw) { this.banner('DRAW', '#ebe3d3', 1.6); }
-      else if (r.winner === G.p && !G.versus) this.banner('YOU WIN!', '#ffdd55', 2);
-      else this.banner(`${NAMES[r.winner.key]} WINS`, '#ffdd55', 2);
-      if (!r.draw) { r.winner.set('victory', r.winner.def.victory, 5); Audio.say(r.winner === G.p && !G.versus ? 'You win' : NAMES[r.winner.key].replace('Ō', 'O').replace("'", '') + ' wins'); }
+      else if (r.winner === G.p && !G.versus) this.banner('YOU WIN!', '#ffdd55', 2, winSub(r.winner));
+      else this.banner(`${NAMES[r.winner.key]} WINS`, '#ffdd55', 2, winSub(r.winner));
+      if (!r.draw) { r.winner.set('victory', r.winner.def.victory, 5); winCall(r.winner); }
     }
     if (this.t > 3.2 && !r.next) {
       r.next = true;
@@ -678,7 +679,7 @@ function drawBanner() {
   b.t += G.frameDt || 1 / 60; if (b.t > b.dur) { G.banner = null; return; }
   const k = ease(b.t / 0.25), a = b.t > b.dur - 0.3 ? (b.dur - b.t) / 0.3 : 1;
   ctx.save(); ctx.globalAlpha = a;
-  text(b.s, W / 2, 210, 84 * (1.3 - 0.3 * k), b.col, { font: FONT.disp, weight: 800, stroke: 10, glow: b.col, blur: 24, spacing: 4 });
+  text(b.s, W / 2, 210, 84 * Math.min(1, 13 / Math.max(13, b.s.length)) * (1.3 - 0.3 * k), b.col, { font: FONT.disp, weight: 800, stroke: 10, glow: b.col, blur: 24, spacing: 4 });
   if (b.sub) text(b.sub, W / 2, 278, 30, '#ebe3d3', { stroke: 5, spacing: 4 });
   ctx.restore();
 }
@@ -802,8 +803,8 @@ function startFatality(kind, att, def) {
     this.t += dt; this.dim = Math.min(1, this.dim + dt * 2);
     const once = (k, at, fn) => { if (this.t >= at && !this.done[k]) { this.done[k] = 1; fn(); } };
     this.run(this, once, dt);
-    once('banner', this.bannerAt || 99, () => { Fight.banner('KAISHAKU!', '#ff2a1f', 2.6); Audio.sfx('fatality'); Audio.say('Kye-shah-koo!', 0.75, 0.05); FX.flash = 0.5; FX.flashCol = '#a00'; });
-    once('wins', (this.bannerAt || 99) + 2.8, () => { Fight.banner(`${NAMES[att.key]} WINS`, '#ffdd55', 2.2, FATAL_NAMES[kind]); });
+    once('banner', this.bannerAt || 99, () => { Fight.banner('KAISHAKU!', '#ff2a1f', 2.6); Audio.sfx('fatality'); Audio.clip('kaishaku', 'Kye-shah-koo!', 0.75, 0.05); FX.flash = 0.5; FX.flashCol = '#a00'; });
+    once('wins', (this.bannerAt || 99) + 2.8, () => { Fight.banner(`${NAMES[att.key]} WINS`, '#ffdd55', 2.2, FATAL_NAMES[kind] + (att.hp >= 10 ? ' · IMPECCABLE' : '')); winCall(att); });
     once('end', (this.bannerAt || 99) + 5.2, () => { G.fatal = null; G.pit = null; endMatch(att === G.p); });
   };
 }
@@ -811,6 +812,14 @@ function startFatality(kind, att, def) {
 function slashArc(x, y, r, a0, a1, face) {
   if (face < 0) { a0 = Math.PI - a0; a1 = Math.PI - a1; }
   FX.add({ kind: 'slash', x, y, size: r, a0, a1, life: 0.35, g: 0 });
+}
+// the announcer at a win: Chris's recorded lines, and IMPECCABLE when the winner took no damage
+function winSub(w) { return w.hp >= 10 ? 'IMPECCABLE' : undefined; }
+function winCall(w) {
+  if (G.versus) Audio.say(NAMES[w.key].replace('Ō', 'O').replace("'", '') + ' wins');
+  else if (w === G.p) Audio.clip('youwin', 'You win');
+  else Audio.clip('youlose', 'You lose');
+  if (w.hp >= 10) setTimeout(() => Audio.clip('impeccable', 'Impeccable'), 1500);
 }
 function approach(f, x, dt, sp) { const d = x - f.x; if (Math.abs(d) > 4) { f.x += Math.sign(d) * Math.min(Math.abs(d), sp * dt); f.target = Math.sin(G.time * 9) > 0 ? 'walk1' : 'walk2'; f.speed = 10; return false; } return true; }
 

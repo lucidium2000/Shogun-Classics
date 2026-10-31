@@ -403,13 +403,18 @@ footer a { color: var(--ink); }
   }
   const PICK = {
     '1996': () => { playQB('T250 O0E O0G O0E- O0E O0G- O0G'); setTimeout(() => playQB('T250 O1E- O1E- O1E O1E O1E- O1E- O1E O1E'), 1440); },   // Wan'fu's entrance, the first fight
-    remastered: () => { say('Let the tournament begin!', 0.78, 0.05); tone(90, 40, 0, 0.6, 'sine', 0.7); noise(0, 0.3, 0.3); },
-    ii: () => {
-      const ac = audio(); if (!ac) return;
-      if (cheers) { const s = ac.createBufferSource(), g = ac.createGain(); g.gain.value = 1.4; s.buffer = cheers; s.connect(g); g.connect(ac.destination); s.start(); }
-    },
+    remastered: () => { if (!clip(kaishaku)) say('Kaishaku!', 0.78, 0.05); tone(90, 40, 0, 0.6, 'sine', 0.7); noise(0, 0.3, 0.3); },   // the Remake's announcer
+    ii: () => clip(cheers),
   };
-  fetch('sounds/corbin-cheers.mp3').then(r => r.ok ? r.arrayBuffer() : null).then(b => { const ac = audio(); return b && ac && ac.decodeAudioData(b); }).then(buf => { if (buf) cheers = buf; }).catch(() => {});
+  function clip(buf) {
+    const ac = audio(); if (!ac || !buf) return false;
+    const s = ac.createBufferSource(), g = ac.createGain(); g.gain.value = 1.4; s.buffer = buf; s.connect(g); g.connect(ac.destination); s.start();
+    return true;
+  }
+  let kaishaku = null;
+  const load = (url, done) => fetch(url).then(r => r.ok ? r.arrayBuffer() : null).then(b => { const ac = audio(); return b && ac && ac.decodeAudioData(b); }).then(buf => { if (buf) done(buf); }).catch(() => {});
+  load('sounds/corbin-cheers.mp3', b => { cheers = b; });
+  load('sounds/kaishaku.mp3', b => { kaishaku = b; });
   confirm = which => {
     if (PICK[which]) { noise(0, 0.12, 0.2); PICK[which](); return; }
     [523, 659, 784, 1047].forEach((f, i) => tone(f, f * 1.01, i * 0.055, 0.09, 'square', 0.14));
