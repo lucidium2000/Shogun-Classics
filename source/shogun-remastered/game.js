@@ -262,7 +262,7 @@ const Select = {
   pick(i, cheat) {
     const k = ['keero', 'shokei'][i];
     if (this.chosen) return;
-    Audio.sfx('taiko'); Audio.say(NAMES[k] === 'SHŌKEI' ? 'Show-kay' : 'Keero');
+    Audio.sfx('taiko'); Audio.clip('n_' + k, NAMES[k] === 'SHŌKEI' ? 'Show-kay' : 'Keero');
     if (G.mode === '2p') {
       if (this.picker === 0) { G.hero = k; this.picker = 1; this.sel = 1 - i; return; }
       G.hero2 = k; this.chosen = { i, at: this.t }; return;
@@ -371,7 +371,7 @@ const Fight = {
     G.cam = Stages.ARENA / 2 - W / 2; G.projectiles = []; FX.reset(); G.codeEntry = null; G.fatal = null; G.pit = null;
     G.fighting = false; this.phase = 'round'; this.t = 0; G.slow = 1; G.combo = { n: 0, t: 0 }; this.result = null;
     const rn = ['Round one', 'Round two', 'Round three', 'Round four', 'Round five'][Math.min(4, G.round - 1)];
-    if (G.round <= 2) Audio.clip('round' + G.round, rn); else Audio.say(rn);
+    if (G.round <= 3) Audio.clip('round' + G.round, rn); else Audio.say(rn);
     Audio.sfx('gong');
   },
   update(dt, evs) {
@@ -770,7 +770,7 @@ const Ending = {
     this.t = 0; Audio.music('title'); Audio.play('T250 O1E O1G O2C O2E O2G O2E O2G.', { voice: 'brass' });
     setTimeout(() => { if (G.scene === Ending) Audio.play('T200 O0E O0E O0E.O1E O1G O1G O2G O3F O1E', { voice: 'brass' }); }, 2600);
     this.f = new Fighter(G.hero, 330, 1, false, 0); this.f.set('victory', this.f.def.victory, 3); G.stage = Stages.make(2);
-    Audio.say(NAMES[G.hero].replace('Ō', 'O') + ' wins. Flawless.', 0.85, 0.2);
+    Audio.clip('n_' + G.hero, NAMES[G.hero].replace('Ō', 'O')); setTimeout(() => { if (G.scene === Ending) Audio.clip('impeccable', 'Flawless'); }, 1100);
   },
   update(dt, evs) { this.t += dt; this.f.update(G, dt, this.f); if (this.t > 4 && evs.some(e => e.m === 'ok' || e.m === 'tap')) go(Title); },
   draw() {
@@ -816,7 +816,7 @@ function slashArc(x, y, r, a0, a1, face) {
 // the announcer at a win: Chris's recorded lines, and IMPECCABLE when the winner took no damage
 function winSub(w) { return w.hp >= 10 ? 'IMPECCABLE' : undefined; }
 function winCall(w) {
-  if (G.versus) Audio.say(NAMES[w.key].replace('Ō', 'O').replace("'", '') + ' wins');
+  if (G.versus) Audio.clip('n_' + w.key, NAMES[w.key].replace('Ō', 'O').replace("'", '') + ' wins');
   else if (w === G.p) Audio.clip('youwin', 'You win');
   else Audio.clip('youlose', 'You lose');
   if (w.hp >= 10) setTimeout(() => Audio.clip('impeccable', 'Impeccable'), 1500);
