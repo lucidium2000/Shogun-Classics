@@ -10,4 +10,5 @@ python3 source/shogun-1996/build.py shogun-1996/index.html
 python3 tools/standalone.py shogun-1996/index.html
 python3 source/shogun-remastered/build.py shogun-remastered/index.html
 python3 tools/standalone.py shogun-remastered/index.html
+python3 tools/eras.py shogun-1996/index.html shogun-remastered/index.html shogun-ii/index.html
 python3 tools/standalone.py source/launcher/index.html index.html

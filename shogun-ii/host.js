@@ -8,7 +8,7 @@ const KOF = (() => {
   let ex, mem, files, canvas, ctx2d, imageData, onStatus = () => {};
   // pause: the engine's own Esc quits a fight, so Start opens a menu here instead.
   // A fight starts when the round call plays; any new song means we left it.
-  let inFight = false, paused = false, pausedAt = 0, pausedFor = 0, pendingResume = false, onPause = null;
+  let inFight = false, paused = false, pausedAt = 0, pausedFor = 0, pendingResume = false, onPause = null, onSong = null;
   const samplePaths = [];
   const EXIT = { exit: true };
 
@@ -352,6 +352,7 @@ const KOF = (() => {
   }
   function mp3Open(path) {
     inFight = false;
+    if (onSong) onSong(path);
     if (path === mp3Path) return 1;          // already the current song
     mp3Close();
     if (!getFile(path)) return 0;
@@ -498,6 +499,7 @@ const KOF = (() => {
     canvas = opts.canvas;
     onStatus = opts.onStatus || onStatus;
     onPause = opts.onPause || null;
+    onSong = opts.onSong || null;
     ctx2d = canvas.getContext('2d');
     files = opts.files;
     const overrides = opts.overrides || {};

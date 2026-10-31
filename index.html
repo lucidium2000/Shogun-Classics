@@ -315,6 +315,17 @@ footer a { color: var(--ink); }
     if (e.origin !== location.origin || !stage || e.source !== stage.contentWindow) return;
     if (e.data === 'shogun:menu') history.back();
     else if (e.data === 'shogun:full') goFull(true);
+    else if (typeof e.data === 'string' && e.data.startsWith('shogun:play:')) {
+      // a game's "choose your era" strip: swap straight to the other game
+      const g = games.find(x => x.dataset.g === e.data.slice(12));
+      if (!g) return;
+      pick(games.indexOf(g)); confirm(g.dataset.g);
+      stage.title = g.querySelector('h2') ? g.querySelector('h2').textContent : 'Game';
+      // replace, not a new src: the menu's Back should still lead home, not to the last game
+      try { stage.contentWindow.location.replace(new URL(g.getAttribute('href'), location.href).href); } catch (err) { stage.src = g.getAttribute('href'); }
+      history.replaceState({ shogunGame: g.dataset.g }, '');
+      stage.focus();
+    }
   });
   addEventListener('pageshow', () => { document.body.classList.remove('going'); games.forEach(g => g.classList.remove('chosen')); });
   games.forEach((g, i) => { g.addEventListener('mouseenter', () => pick(i)); g.addEventListener('focus', () => pick(i)); });
