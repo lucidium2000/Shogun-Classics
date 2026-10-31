@@ -24,7 +24,7 @@ const G = {
   projectiles: [], fighting: false, codeEntry: null, hitstop: 0, slow: 1, cam: 110, banner: null, combo: { n: 0, t: 0 },
   found: store.get('found', {}), paused: false,
 };
-Audio.voice = store.get('voice', true); FX.gore = store.get('gore', true);
+Audio.voice = store.get('voice', true); FX.gore = store.get('blood96', false);   // blood is off until the old code is entered on the title screen (Chris, 2026-10-31)
 let soundPref = store.get('sound', true);
 
 /* ------------------------------------------------------------ helpers */
@@ -165,7 +165,7 @@ const Intro = {
 };
 
 const Title = {
-  enter() { this.t = 0; this.stage = 0; this.sel = 0; Audio.music('title'); this.stars = []; for (let i = 0; i < 70; i++) this.stars.push({ x: Math.random() * W, y: Math.random() * H, v: 6 + Math.random() * 20 }); },
+  enter() { this.t = 0; this.stage = 0; this.sel = 0; this.code = []; this.codeN = 0; this.codeShow = 0; this.codeT = 0; Audio.music('title'); this.stars = []; for (let i = 0; i < 70; i++) this.stars.push({ x: Math.random() * W, y: Math.random() * H, v: 6 + Math.random() * 20 }); },
   items() {
     return [['1 PLAYER', () => { G.mode = '1p'; Input.twoP = false; go(Select); }],
       ['2 PLAYERS', () => { G.mode = '2p'; Input.twoP = true; go(Select); }],
@@ -175,6 +175,22 @@ const Title = {
   },
   update(dt, evs) {
     this.t += dt;
+    // the old code: up, up, down, down, left, right turns the blood on (and off again)
+    for (const e of evs) {
+      const d = e.m === 'swipe' ? e.d : e.m;
+      if (!['up', 'down', 'left', 'right'].includes(d)) continue;
+      this.code = ((this.code || []).concat(d)).slice(-6);
+      // how far along the code the last presses are; each step lights up like a fatality code
+      const SEQ = ['up', 'up', 'down', 'down', 'left', 'right'];
+      let n = this.code.length; while (n > 0 && this.code.slice(-n).join() !== SEQ.slice(0, n).join()) n--;
+      if (n) { this.codeN = n; this.codeShow = 1.6; Audio.sfx('code', n); } else this.codeN = 0;
+      if (n === 6) {
+        this.code = []; this.codeN = 0; this.codeShow = 0; FX.gore = !FX.gore; store.set('blood96', FX.gore); store.set('bloodcode', true);
+        this.codeT = 0.001; Audio.sfx(FX.gore ? 'blood' : 'ui'); if (FX.gore) { Audio.sfx('taiko'); Audio.clip('kaishaku', 'Kye-shah-koo!', 0.75, 0.05); }
+      }
+    }
+    if (this.codeT) this.codeT += dt;
+    if (this.codeShow > 0) this.codeShow -= dt;
     if (this.stage === 0) {
       if (evs.some(e => e.m === 'ok' || e.m === 'tap')) { this.stage = 1; Audio.sfx('taiko'); }
       return;
@@ -204,6 +220,25 @@ const Title = {
       it.forEach(([l, on], i) => button(l, W / 2 + (i - (it.length - 1) / 2) * gap, 430, gap - 15, 46, on, i === this.sel));
     }
     text('MYSTICAL SOFTWARE (C)1995-1996  ·  REMASTERED 2026', W / 2, 515, 16, '#5c8c8c', { font: FONT.dos, weight: 400, spacing: 1 });
+    // a quiet nod for anyone who grew up on the old code; it means nothing to anyone else
+    if (FX.gore) text('BLOOD CODE ON', W / 2, 492, 13, '#7a1412', { font: FONT.dos, weight: 400, spacing: 2 });
+    else text('THE OLD CODE STILL WORKS  ·  30 LIVES NOT INCLUDED', W / 2, 492, 13, '#3a5656', { font: FONT.dos, weight: 400, spacing: 1 });
+    // the code box, in the fatality code's style: each press lights an arrow, then it answers
+    const done = this.codeT && this.codeT < 2.2;
+    if (done || (this.codeShow > 0 && this.codeN)) {
+      const k = done ? (this.codeT < 0.15 ? this.codeT / 0.15 : Math.min(1, (2.2 - this.codeT) / 0.5)) : Math.min(1, this.codeShow / 0.3);
+      if (done && FX.gore) { ctx.fillStyle = `rgba(150,0,0,${0.35 * Math.max(0, 1 - this.codeT * 2)})`; ctx.fillRect(0, 0, W, H); }
+      ctx.save(); ctx.globalAlpha = k;
+      ctx.fillStyle = 'rgba(0,0,0,0.92)'; ctx.fillRect(W / 2 - 200, 262, 400, 74);
+      ctx.strokeStyle = '#a3201d'; ctx.lineWidth = 2; ctx.strokeRect(W / 2 - 200, 262, 400, 74);
+      if (done) text(FX.gore ? 'BLOOD CODE ACCEPTED' : 'BLOOD OFF', W / 2, 299, 30, FX.gore ? '#ff2a1f' : '#8c8070', { font: FONT.dos, weight: 400, glow: FX.gore ? '#800' : undefined });
+      else {
+        const arr = codeArrows('882246'.slice(0, this.codeN), 1), rest = ' _'.repeat(6 - this.codeN);
+        text(arr + rest, W / 2, 292, 36, '#ffffff', { font: FONT.dos, weight: 400 });
+        ctx.fillStyle = '#a3201d'; ctx.fillRect(W / 2 - 198, 330, 396 * this.codeN / 6, 4);
+      }
+      ctx.restore();
+    }
   },
 };
 
@@ -212,7 +247,7 @@ const Options = {
   list() {
     return [[`SOUND: ${soundPref ? 'ON' : 'OFF'}`, () => { soundPref = !soundPref; Audio.setOn(soundPref); store.set('sound', soundPref); }],
       [`ANNOUNCER VOICE: ${Audio.voice ? 'ON' : 'OFF'}`, () => { Audio.voice = !Audio.voice; store.set('voice', Audio.voice); Audio.say('Shogun'); }],
-      [`BLOOD: ${FX.gore ? 'ON' : 'OFF'}`, () => { FX.gore = !FX.gore; store.set('gore', FX.gore); }],
+      ...(store.get('bloodcode', false) ? [[`BLOOD: ${FX.gore ? 'ON' : 'OFF'}`, () => { FX.gore = !FX.gore; store.set('blood96', FX.gore); }]] : []),
       [`SPRITES: ${{ blocks: '1996 BLOCKS', pixel: 'PIXEL', smooth: 'SMOOTH' }[Retro.mode]}`, () => { Retro.mode = { blocks: 'pixel', pixel: 'smooth', smooth: 'blocks' }[Retro.mode]; store.set('sprites3', Retro.mode); }],
       [`DIFFICULTY: ${['EASY', '1996', 'HARD'][G.diff]}`, () => { G.diff = (G.diff + 1) % 3; store.set('diff', G.diff); }],
       ['BACK', () => go(this.back)]];
@@ -829,8 +864,9 @@ const Ending = {
 function startFatality(kind, att, def) {
   G.found[kind] = 1; store.set('found', G.found);
   Fight.phase = 'fatal'; G.fighting = false;
-  const steps = { head: fatalHead, pit: fatalPit, throw: fatalPit, run: fatalRun }[kind];
-  G.fatal = { t: 0, dim: 0, kind, done: {}, att, def, run: steps };
+  // without the blood code every fatality becomes one hard slow-motion blow; the tagline and finish stay
+  const steps = FX.gore ? { head: fatalHead, pit: fatalPit, throw: fatalPit, run: fatalRun }[kind] : fatalPunch;
+  G.fatal = { t: 0, dim: 0, kind, done: {}, att, def, run: steps, clean: !FX.gore };
   att.scripted = true; def.scripted = true;
   Audio.duck(0.25, 6);
   G.fatal.update = function (dt) {
@@ -838,7 +874,7 @@ function startFatality(kind, att, def) {
     const once = (k, at, fn) => { if (this.t >= at && !this.done[k]) { this.done[k] = 1; fn(); } };
     this.run(this, once, dt);
     once('banner', this.bannerAt || 99, () => { Fight.banner('KAISHAKU!', '#ff2a1f', 2.6); Audio.sfx('fatality'); Audio.clip('kaishaku', 'Kye-shah-koo!', 0.75, 0.05); FX.flash = 0.5; FX.flashCol = '#a00'; });
-    once('wins', (this.bannerAt || 99) + 2.8, () => { Fight.banner(`${NAMES[att.key]} WINS`, '#ffdd55', 2.2, FATAL_NAMES[kind] + (att.hp >= 10 ? ' · IMPECCABLE' : '')); winCall(att, true); });
+    once('wins', (this.bannerAt || 99) + 2.8, () => { Fight.banner(`${NAMES[att.key]} WINS`, '#ffdd55', 2.2, this.clean ? winSub(att) : FATAL_NAMES[kind] + (att.hp >= 10 ? ' · IMPECCABLE' : '')); winCall(att, true); });
     once('end', (this.bannerAt || 99) + 5.2, () => { G.fatal = null; G.pit = null; endMatch(att === G.p); });
   };
 }
@@ -939,6 +975,24 @@ function fatalRun(F, once, dt) {
   F.bannerAt = 3.6;
 }
 
+// the bloodless finish: wind up, a slow-motion haymaker, and the foe is knocked flat
+function fatalPunch(F, once, dt) {
+  const a = F.att, d = F.def, t = F.t;
+  if (t < 0.7) { if (approach(a, d.x - a.face * 105, dt, 240)) a.target = a.def.idle[0]; }
+  once('wind', 0.75, () => { a.state = 'script'; a.target = 'punchS'; a.speed = 8; G.slow = 0.3; Audio.sfx('whoosh'); a.grunt('atk', true); });
+  once('swing', 1.05, () => { a.target = 'cross'; a.speed = 22; });
+  once('hit', 1.2, () => {
+    Audio.sfx('heavy'); Audio.sfx('crunch'); d.grunt('ko', true); G.hitstop = 0.12; FX.shake = 18; FX.flash = 0.45; FX.flashCol = '#fff';
+    const hx = d.x - a.face * 10, hy = GY - 170 * d.s; FX.spark(hx, hy, '#fff2c0', 26); FX.ring(hx, hy, '#fff', 60);
+    d.state = 'launch'; d.grounded = false; d.vy = -820; d.vx = a.face * 520; d.freeRot = true; d.target = 'launch'; d.speed = 6;
+  });
+  if (d.state === 'launch') d.pose.rot -= dt * 300;
+  once('real', 1.4, () => { G.slow = 1; a.state = 'fatal'; a.target = a.def.idle[0]; a.speed = 6; });
+  if (F.done.hit && d.grounded) { if (!F.done.land) { F.done.land = 1; d.freeRot = false; FX.dust(d.x, GY, 16); } d.pose.rot += (-88 - d.pose.rot) * Math.min(1, dt * 10); }
+  once('vict', 2.1, () => { a.target = a.def.victory; a.speed = 5; });
+  F.bannerAt = 2.0;
+}
+
 /* ================================================================ LOOP */
 let last = performance.now(), q = 1;
 function resize() {
@@ -947,9 +1001,17 @@ function resize() {
   cv.width = Math.round(W * q); cv.height = Math.round(H * q);
 }
 addEventListener('resize', resize);
+// a swipe on the canvas counts as a direction (so the old code works on a phone too)
+let swipe0 = null;
+cv.addEventListener('pointerup', e => {
+  if (!swipe0) return; const dx = e.clientX - swipe0[0], dy = e.clientY - swipe0[1]; swipe0 = null;
+  if (Math.max(Math.abs(dx), Math.abs(dy)) < 30) return;
+  Input.menu.push({ m: 'swipe', d: Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up') });
+});
 cv.addEventListener('pointerdown', e => {
   const r = cv.getBoundingClientRect();
   Input.menu.push({ m: 'tap', x: (e.clientX - r.left) / r.width * W, y: (e.clientY - r.top) / r.height * H });
+  swipe0 = [e.clientX, e.clientY];
   if (e.pointerType === 'touch') { Input.touch = true; document.body.classList.add('touch'); }
 });
 addEventListener('touchstart', () => { Input.touch = true; document.body.classList.add('touch'); }, { passive: true });
