@@ -89,11 +89,9 @@ const Rig = (() => {
 
   R.LOOKS = {
     keero: {
-      // wandering swordsman (Chris's reference): topknot, white face cloth, red kimono over a blue under-collar,
-      // grey hakama, purple wrist and shin wraps tied with white cord, blue straw sandals, katana
-      name: 'KEERO', s: 1, skin: '#c48a5e', gi: '#c23a22', pants: '#6f6f6c', sleeve: 'full', fore: '#c23a22', hand: '#c48a5e',
-      belt: '#4a4744', band: null, hair: '#14100e', hairStyle: 'topknot', faceCloth: '#ece7dc', lapel: '#e07a2e', inner: '#2b3c86',
-      wrap: '#4b34a8', shin: '#4b34a8', feet: '#3d6fae', hakama: true, noTail: true,
+      // sōhei warrior monk: white katō hood, crimson robe, grey shawl, big juzu beads, wrapped forearms, dark hakama
+      name: 'KEERO', s: 1, skin: '#c48a5e', gi: '#8a2620', pants: '#262220', sleeve: 'elbow', fore: '#e6dfd0', hand: '#ece6da',
+      belt: '#b08a3a', band: null, hood: '#ece6da', hoodTail: '#e2dccf', hair: '#17110e', hairStyle: 'hood2', sohei: true, shawl: '#5b5753', robe: '#8a2620', beads: '#171210',
       shW: 42, waist: 32, limb: 1, weapon: 'katana',
     },
     shokei: {
@@ -217,7 +215,7 @@ const Rig = (() => {
     const dark = k => c => c && shade(c, k);
     const back = dark(0.62), mid = dark(0.86);
     const pantsC = L.pants, giC = L.gi || L.skin;
-    const loose = L.gi && !L.shadow ? (L.sohei || L.armor || L.hakama ? 1.3 : 1.15) : 1;
+    const loose = L.gi && !L.shadow ? (L.sohei || L.armor ? 1.3 : 1.15) : 1;
     const thighR = 12.5 * s * lw * loose, shinR = 9.5 * s * lw * loose, uaR = 8.4 * s * lw, faR = 7 * s * lw;
     const tn = J.torsoA;
     const n = [Math.cos(tn) * face, Math.sin(tn)]; // torso "forward" normal in world space
@@ -226,16 +224,15 @@ const Rig = (() => {
     if (upper) {
       segs.push({ c: back(L.sleeve === 'none' ? L.skin : (L.robe || giC)), f: () => capsule(ctx, J.SB, uaR * 1.05, J.EB, uaR * 0.92) });
       segs.push({ c: back(L.sleeve === 'full' ? giC : L.fore), f: () => capsule(ctx, J.EB, faR, J.WB, faR * 0.85) });
-      if (L.wrap) segs.push({ c: back(L.wrap), f: () => capsule(ctx, lerp2(J.EB, J.WB, 0.5), faR * 0.92, J.WB, faR * 0.85) });
       segs.push({ c: back(L.hand), f: () => { ctx.beginPath(); ctx.arc(J.WB[0], J.WB[1], faR * 1.15, 0, 7); } });
     }
     if (lower) {
       segs.push({ c: back(pantsC), f: () => capsule(ctx, J.H, thighR, J.KB, shinR * 1.1) });
       segs.push({ c: back(L.shin || pantsC), f: () => capsule(ctx, J.KB, shinR * 1.05, ankle(J.KB, J.FB, s), shinR * 0.85) });
-      segs.push({ c: back(L.feet || L.skin), f: () => foot(ctx, J.FB, J.saB, face, s) });
+      segs.push({ c: back(L.skin), f: () => foot(ctx, J.FB, J.saB, face, s) });
       segs.push({ c: mid(pantsC), f: () => capsule(ctx, J.H, thighR, J.KF, shinR * 1.1) });
       segs.push({ c: mid(L.shin || pantsC), f: () => capsule(ctx, J.KF, shinR * 1.05, ankle(J.KF, J.FF, s), shinR * 0.85) });
-      segs.push({ c: L.feet || L.skin, f: () => foot(ctx, J.FF, J.saF, face, s) });
+      segs.push({ c: L.skin, f: () => foot(ctx, J.FF, J.saF, face, s) });
     }
     if (upper) {
       segs.push({ c: giC, f: () => torso(ctx, J, L, n), torso: true });
@@ -244,7 +241,6 @@ const Rig = (() => {
       if (L.sode) segs.push({ c: L.sode, f: () => { capsule(ctx, J.SF, (L.sodeR || 12) * s, [J.SF[0] + (J.EF[0] - J.SF[0]) * 0.5, J.SF[1] + (J.EF[1] - J.SF[1]) * 0.5], ((L.sodeR || 12) + 1) * s); } });
       segs.push({ c: L.sleeve === 'none' ? L.skin : (L.robe || giC), f: () => capsule(ctx, J.SF, uaR * 1.08, J.EF, uaR * 0.95) });
       segs.push({ c: L.sleeve === 'full' ? giC : L.fore, f: () => capsule(ctx, J.EF, faR, J.WF, faR * 0.85) });
-      if (L.wrap) segs.push({ c: L.wrap, f: () => capsule(ctx, lerp2(J.EF, J.WF, 0.5), faR * 0.92, J.WF, faR * 0.85) });
       segs.push({ c: L.hand, f: () => { ctx.beginPath(); ctx.arc(J.WF[0], J.WF[1], faR * 1.2, 0, 7); } });
     }
     ctx.save();
@@ -258,7 +254,6 @@ const Rig = (() => {
     }
     if (upper) {
       torsoDetail(ctx, J, L, n);
-      if (L.wrap) cords(ctx, J, L);
       if (!opts.noHead) head(ctx, J, L, opts);
       if (L.weapon) weapon(ctx, J, L, opts);
     }
@@ -273,14 +268,6 @@ const Rig = (() => {
   function ankle(K, F, s) {
     const dx = K[0] - F[0], dy = K[1] - F[1], l = Math.hypot(dx, dy) || 1, k = Math.min(0.45, 11 * s / l);
     return [F[0] + dx * k, F[1] + dy * k];
-  }
-  function lerp2(a, b, t) { return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]; }
-  // white cord tied around the wrist and shin wraps
-  function cords(ctx, J, L) {
-    const s = J.s; ctx.strokeStyle = '#f2efe8'; ctx.lineWidth = 2.2 * s; ctx.lineCap = 'round';
-    const tie = (A, B, t, w) => { const p = lerp2(A, B, t), dx = B[0] - A[0], dy = B[1] - A[1], l = Math.hypot(dx, dy) || 1, nx = -dy / l * w, ny = dx / l * w; ctx.beginPath(); ctx.moveTo(p[0] - nx, p[1] - ny); ctx.lineTo(p[0] + nx, p[1] + ny); ctx.stroke(); };
-    tie(J.EF, J.WF, 0.62, 7 * s); tie(J.EF, J.WF, 0.8, 6.5 * s);
-    for (const k of ['F', 'B']) { const A = ankle(J['K' + k], J['F' + k], s); tie(J['K' + k], A, 0.15, 10 * s); tie(J['K' + k], A, 0.85, 9 * s); }
   }
   function foot(ctx, F, sa, face, s) {
     ctx.beginPath();
@@ -322,14 +309,6 @@ const Rig = (() => {
       const a = along(0.04, 11), b = along(0.36, 7), c = along(0.04, 0);
       ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.lineTo(c[0], c[1]); ctx.stroke();
       const cr = along(0.3, 15); ctx.fillStyle = L.crest; ctx.beginPath(); ctx.arc(cr[0], cr[1], 3 * s, 0, 7); ctx.fill();
-    }
-    if (L.lapel) { // kimono crossing: blue under-collar in a V, edged by the lighter lapel band
-      const a = along(0.0, 12), b = along(0.42, 3), c = along(0.0, -5);
-      ctx.strokeStyle = L.inner; ctx.lineWidth = 6 * s; ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.lineTo(c[0], c[1]); ctx.stroke();
-      const a2 = along(0.0, 16), b2 = along(0.5, 4), c2 = along(0.0, -9);
-      ctx.strokeStyle = L.lapel; ctx.lineWidth = 4 * s; ctx.beginPath(); ctx.moveTo(a2[0], a2[1]); ctx.lineTo(b2[0], b2[1]); ctx.lineTo(c2[0], c2[1]); ctx.stroke();
-      const sh = along(0.2, -14), sh2 = along(0.75, -10); // a fold of shade down the back
-      ctx.strokeStyle = 'rgba(80,10,5,0.45)'; ctx.lineWidth = 2 * s; ctx.beginPath(); ctx.moveTo(sh[0], sh[1]); ctx.lineTo(sh2[0], sh2[1]); ctx.stroke();
     }
     if (L.sohei) { // grey shawl over the shoulders, white collar, big dark juzu beads
       const sw = L.shW / 2;
@@ -506,14 +485,6 @@ const Rig = (() => {
       const ex = hx + fx * r * 0.62 + ux * r * 0.12, ey = hy + fy * r * 0.62 + uy * r * 0.12;
       ctx.beginPath(); ctx.ellipse(ex, ey, 2.4 * s, 1.5 * s, a, 0, 7); ctx.fill();
       }
-    }
-    if (L.faceCloth) { // cloth tied over nose and mouth, hanging a little below the chin
-      const P = (f, u) => [hx + fx * r * f + ux * r * u, hy + fy * r * f + uy * r * u];
-      const p0 = P(1.02, -0.02), p1 = P(-0.2, 0.0), p2 = P(-0.3, -0.85), p3 = P(0.35, -1.25), p4 = P(0.95, -0.7);
-      ctx.fillStyle = L.faceCloth; ctx.strokeStyle = 'rgba(8,6,6,0.85)'; ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.moveTo(p0[0], p0[1]); ctx.lineTo(p1[0], p1[1]); ctx.quadraticCurveTo(p2[0], p2[1], p3[0], p3[1]); ctx.quadraticCurveTo(p4[0], p4[1], p0[0], p0[1]); ctx.closePath(); ctx.fill(); ctx.stroke();
-      ctx.strokeStyle = 'rgba(120,110,95,0.55)'; ctx.lineWidth = 1.2 * s;
-      for (const u of [-0.35, -0.65]) { const q1 = P(0.0, u), q2 = P(0.85, u + 0.05); ctx.beginPath(); ctx.moveTo(q1[0], q1[1]); ctx.lineTo(q2[0], q2[1]); ctx.stroke(); }
     }
     if (L.band) {
       ctx.strokeStyle = L.band; ctx.lineWidth = 5 * s; ctx.lineCap = 'butt';
