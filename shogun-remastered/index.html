@@ -2681,7 +2681,7 @@ function startFatality(kind, att, def) {
     this.t += dt; this.dim = Math.min(1, this.dim + dt * 2);
     const once = (k, at, fn) => { if (this.t >= at && !this.done[k]) { this.done[k] = 1; fn(); } };
     this.run(this, once, dt);
-    once('banner', this.bannerAt || 99, () => { Fight.banner('FATALITY', '#ff2a1f', 2.6); Audio.sfx('fatality'); Audio.say('Fatality', 0.75, 0.05); FX.flash = 0.5; FX.flashCol = '#a00'; });
+    once('banner', this.bannerAt || 99, () => { Fight.banner('FINAL BUSHIDO', '#ff2a1f', 2.6); Audio.sfx('fatality'); Audio.say('Final Bushido', 0.75, 0.05); FX.flash = 0.5; FX.flashCol = '#a00'; });
     once('wins', (this.bannerAt || 99) + 2.8, () => { Fight.banner(`${NAMES[att.key]} WINS`, '#ffdd55', 2.2, FATAL_NAMES[kind]); });
     once('end', (this.bannerAt || 99) + 5.2, () => { G.fatal = null; G.pit = null; endMatch(att === G.p); });
   };
