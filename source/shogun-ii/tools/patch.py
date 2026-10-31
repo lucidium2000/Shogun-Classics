@@ -160,6 +160,18 @@ sub(r'(p2\.limoffy = spr2y \+ p2\.rush\.offy ;\n\n\t\t\t    )(if \( spr1y<\(sol1
     r'\1if ( web_rthrow2 ) { p2.simpact_ct = 10 ; actual = 20 ; spr1y = sol1 - 62 ; Hurt(1); }\n\n\t\t\t    else\n\n\t\t\t    \2', expect=1)
 sub(r'(\nstatic int web_sok ;)', r'\nstatic int web_rthrow1 , web_rthrow2 ;\1', expect=1)
 
+# Power hits (Keero, v35): a char.ini with power_hits = 1 shakes the screen
+# when one of their specials (fireball, rush, kick special, supers) connects
+sub(r'(\n\s*p2\.rush\.offy = get_config_int \( sectn , "rush_offy" , 10 \) ;)',
+    r'\1\n   web_power2 = get_config_int ( sectn , "power_hits" , 0 ) ;', expect=1)
+sub(r'(\n\s*p1\.rush\.offy = get_config_int \( sectn , "rush_offy" , 10 \) ;)',
+    r'\1\n   web_power1 = get_config_int ( sectn , "power_hits" , 0 ) ;', expect=1)
+sub(r'(damag2 = p1\.(?:rush|smove|rushx|smovex|fireb|firebx)\.dmg ;)', r'\1 if ( web_power1 ) web_shake = 10 ;', expect=6)
+sub(r'(damag1 = p2\.(?:rush|smove|rushx|smovex|fireb|firebx)\.dmg ;)', r'\1 if ( web_power2 ) web_shake = 10 ;', expect=6)
+sub(r'(\nstatic int web_sok ;)', r'\nstatic int web_power1 , web_power2 , web_shake ;\1', expect=1)
+sub(r'(\n\t  acquire_screen\(\);\n\n\t  )blit \( virtscreen , screen , 0, 0, start_x, start_y, 320, 200 \) ;',
+    r'\1if ( web_shake > 0 ) { static const signed char sx[] = { 0, 3, -3, 2, -2, 3, -1, 1, -2, 2, 0 } ; clear_to_color ( screen , 0 ) ;\n\t    blit ( virtscreen , screen , 0, 0, start_x + sx[web_shake], start_y + sx[10 - web_shake] / 2, 320, 200 ) ; web_shake-- ; }\n\t  else blit ( virtscreen , screen , 0, 0, start_x, start_y, 320, 200 ) ;', expect=1)
+
 # Fighter names under the life bars (the engine never drew them): read from
 # each fighter's char.ini when the fight loads, drawn with a small pixel font
 sub(r'(\n\tweb_stage_load\(bkgdname\[bgd\]\) ;)', r'\1\n\tweb_names(charname[sel1], charname[sel2]) ;', expect=1)
