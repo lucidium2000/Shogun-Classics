@@ -496,6 +496,29 @@ const FONT = Uint8Array.from(atob("/*FONT*/"), c => c.charCodeAt(0));
     press(ch);
   });
 
+  // Gamepad: d-pad or left stick = 8/4/6/2, A = Space (punch), B = K, X = S,
+  // Start (or Select) = Enter. One key per press, like a tap on the keypad.
+  const PAD_BTN = { 0: ' ', 1: 'k', 2: 's', 9: '\r', 8: '\r', 12: '8', 13: '2', 14: '4', 15: '6' };
+  const padPrev = {};
+  let padRaf = 0;
+  const pollPads = () => {
+    for (const gp of (navigator.getGamepads ? navigator.getGamepads() : [])) {
+      if (!gp) continue;
+      const prev = padPrev[gp.index] || {}, now = {};
+      for (const i in PAD_BTN) if (gp.buttons[i] && gp.buttons[i].pressed) now['b' + i] = PAD_BTN[i];
+      // left stick: the stronger axis wins, so a diagonal sends one direction
+      const ax = gp.axes[0] || 0, ay = gp.axes[1] || 0;
+      if (Math.max(Math.abs(ax), Math.abs(ay)) > 0.55) {
+        if (Math.abs(ax) > Math.abs(ay)) now.stick = ax > 0 ? '6' : '4'; else now.stick = ay > 0 ? '2' : '8';
+      }
+      for (const k in now) if (now[k] !== prev[k]) press(now[k]);
+      padPrev[gp.index] = now;
+    }
+    padRaf = requestAnimationFrame(pollPads);
+  };
+  addEventListener('gamepadconnected', () => { if (!padRaf) pollPads(); });
+  if (navigator.getGamepads && [...navigator.getGamepads()].some(Boolean)) pollPads();
+
   // One-tap fatalities. The 1996 codes are numpad moves typed at FINISH HIM:
   // a key leaves the FINISH HIM screen, then INPUT FT$ reads the code.
   const FATALS = {
