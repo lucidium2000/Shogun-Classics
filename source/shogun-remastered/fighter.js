@@ -20,7 +20,7 @@ const DEFS = {
   shokei: { hero: true, walk: 175, idle: ['sIdle', 'sIdle2'], block: 'block', crouch: 'crouch', jump: 'jump', kick: 'jumpKick', victory: 'sVictory',
     punches: [['slashS', 'slashH']], punch: MOVES.slash, upper: MOVES.sUpper, upperP: ['sUpperS', 'sUpperH'],
     special: 'dash', seq: [4, 6] },
-  wanfu: { walk: 85, idle: ['idle', 'idle2'], victory: 'victory', think: 0.5, aggro: 0.5, armorAt: 3,
+  wanfu: { walk: 85, idle: ['idle', 'idle2'], victory: 'victory', think: 0.5, aggro: 0.5, armorAt: 3, slam: true,
     moves: { hit: { dmg: 0.5, st: 0.34, act: 0.1, rec: 0.38, reach: 112, type: 'high', p: ['punchS', 'punchH'], sfx: 'heavy' },
       kick: { dmg: 1, st: 0.42, act: 0.12, rec: 0.42, reach: 124, type: 'low', p: ['kickS', 'kickH'], sfx: 'heavy' } } },
   yamana: { walk: 140, idle: ['yIdle', 'yIdle2'], victory: 'yIdle', think: 0.42, aggro: 0.5, armorAt: 3, acrobat: true,
@@ -131,6 +131,8 @@ class Fighter {
     const roll = Math.floor(Math.random() * (D.frill ? 4 : 6));
     const pick = roll === 1 || roll === 2 ? 'hit' : roll === 0 ? 'kick' : null;
     if (Math.random() < 0.5) this.plan = Math.random() < 2 / 3 ? 'hit' : 'kick';
+    // Wan'fu's overhead slam: up close he grabs instead of punching (a grab goes through a block)
+    if (D.slam && pick && !(this.slamCD > performance.now()) && dist < 118 && foe.grounded && !foe.scripted && ['idle', 'walk', 'block', 'crouch'].includes(foe.state) && Math.random() < 0.3) return G.wanfuSlam(this, foe);
     if (D.moves.wheel && pick === 'hit' && dist > 150 && dist < 420 && Math.random() < 0.6) return this.cartwheel(dist);
     if (!pick || dist > D.moves[pick].reach + 4) return;
     if (D.frill && foe.state === 'crouch' && Math.random() < 0.6) return this.attack('kick');
@@ -150,6 +152,7 @@ class Fighter {
   /* -------------------------------------------------------- update */
   update(G, dt, foe) {
     this.t += dt;
+    if (this.slamming) G.slamStep(this, dt);
     const P = Rig.POSES;
     if (!this.scripted) switch (this.state) {
       case 'jumpKick': if (!this.hitDone) G.tryHit(this, foe, MOVES.jumpKick); break;

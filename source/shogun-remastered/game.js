@@ -623,6 +623,36 @@ function frillThrow(fr, victim) {
     }, 170);
   }, 420);
 }
+// Wan'fu's slam: grab, hoist overhead, hold, then drive the victim into the floor (damage 2)
+G.wanfuSlam = function (w, v) {
+  Audio.sfx('catch'); w.grunt('atk', true);
+  w.set('attack', 'grab', 18); w.move = { st: 99, act: 0, rec: 0 }; w.movePoses = ['grab', 'grab']; w.vx = 0;
+  v.set('hurt', 'hitHi', 18); v.hurtT = 9; v.vx = 0; v.vy = 0; v.grounded = true; v.scripted = true; v.freeRot = true;
+  w.slamming = { v, t: 0, x0: v.x }; w.slamCD = performance.now() + 6000;
+};
+G.slamStep = function (w, dt) {
+  const S = w.slamming, v = S.v, k = Math.min(1, dt * 10); S.t += dt;
+  if ((!G.fighting || w.state !== 'attack') && S.t < 1.25) S.t = 1.25;   // round over or Wan'fu hit mid-hold: drop now
+  if (S.t < 0.25) { v.x += (w.x + w.face * 50 - v.x) * k; return; }
+  if (S.t < 1.25) {   // hoist and hold overhead, victim kicking
+    w.target = 'carry'; w.speed = 9; v.target = 'heldUp'; v.speed = 10;
+    v.x += (w.x + w.face * 6 - v.x) * k; v.y += (-215 * w.s - v.y) * k; v.pose.rot += (-90 - v.pose.rot) * k;
+    if (S.t > 0.7) v.pose.hipF = 10 + Math.sin(S.t * 30) * 14;
+    return;
+  }
+  if (!S.down) {   // drive down
+    S.down = true; w.target = 'slam'; w.speed = 22; Audio.sfx('whoosh');
+    v.scripted = false; v.freeRot = false; v.grounded = false; v.vy = 1100; v.vx = w.face * 140; v.state = 'thrown';
+    v.hp = Math.max(0, v.hp - 2); v.dmgHold = 0.5; v.grunt(v.hp <= 0 ? 'ko' : 'hurt', true);
+    return;
+  }
+  if (v.grounded || S.t > 1.8) {
+    w.slamming = null;
+    Audio.sfx('fall'); Audio.sfx('crunch'); FX.shake = 16; G.hitstop = 0.08; FX.blood(v.x, GY - 30, 0, 1.5); FX.dust(v.x, GY, 18);
+    if (v.hp <= 0) Fight.ko(w, v); else { v.set('down', 'down', 12); v.pose.rot = -88; }
+    w.set('idle', w.def.idle[0], 6);
+  }
+};
 function drawProjectile(pr, ctx) {
   const x = pr.x, y = GY + pr.y, t = pr.t;
   ctx.save(); ctx.globalCompositeOperation = 'lighter';

@@ -605,7 +605,7 @@ const Rig = (() => {
     frill: {
       name: 'FRILL', s: 1.05, skin: '#0b0e16', gi: '#0d1120', pants: '#0a0d18', sleeve: 'full', fore: '#0d1120', hand: '#1a2236',
       // a woman (Chris, 2026-10-31): long black hair streaming behind her, face in shadow, glowing eyes
-      belt: '#1d2a44', band: null, hair: '#05070c', hairStyle: 'long', longHair: '#1c2850', eyes: '#d9f3ff', shadow: true,
+      belt: '#1d2a44', band: null, hair: '#05070c', hairStyle: 'long', longHair: '#1c2850', eyes: '#ff2414', shadow: true,
       shW: 44, waist: 30, limb: 0.95, weapon: null, rimCol: '#9fdcff',
     },
   };
@@ -958,9 +958,15 @@ const Rig = (() => {
       const bg = at(55, r * 0.55), bb = at(-60, r * 0.6); ctx.quadraticCurveTo(bg[0], bg[1], bb[0], bb[1]); ctx.closePath(); ctx.fill();
       ctx.strokeStyle = 'rgba(140,190,255,0.35)'; ctx.lineWidth = 1.6; ctx.beginPath();   // a cold sheen on the crown
       for (let th = -120; th <= 20; th += 10) { const q = at(th, r * 1.02); th === -120 ? ctx.moveTo(q[0], q[1]) : ctx.lineTo(q[0], q[1]); } ctx.stroke();
-      ctx.shadowColor = L.eyes; ctx.shadowBlur = 14; ctx.fillStyle = L.eyes;
-      for (const k of [0.45, 0.85]) { ctx.beginPath(); ctx.ellipse(hx + fx * r * k + ux * r * 0.05, hy + fy * r * k + uy * r * 0.05, 2.4, 1.3, a, 0, 7); ctx.fill(); }
-      ctx.shadowBlur = 0;
+      // menacing eyes (Chris, 2026-10-31): sunken shadow across the brow, a hard scowl, and slanted red slits that narrow toward the nose
+      const E = (f, u) => [hx + fx * r * f + ux * r * u, hy + fy * r * f + uy * r * u];
+      const poly = pts => { ctx.beginPath(); pts.forEach((q, i) => i ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1])); ctx.closePath(); ctx.fill(); };
+      ctx.fillStyle = 'rgba(0,0,0,0.75)'; poly([E(0.25, 0.32), E(1.0, 0.18), E(1.0, -0.2), E(0.25, -0.12)]);
+      ctx.fillStyle = '#03040a'; poly([E(0.22, 0.42), E(1.02, 0.12), E(1.02, 0.02), E(0.22, 0.26)]);
+      ctx.shadowColor = L.eyes; ctx.shadowBlur = 16; ctx.fillStyle = L.eyes;
+      for (const k of [0.4, 0.8]) poly([E(k - 0.17, 0.2), E(k + 0.15, 0.04), E(k + 0.13, -0.04), E(k - 0.15, 0.06)]);
+      ctx.shadowBlur = 0; ctx.fillStyle = '#ffe6a8';
+      for (const k of [0.4, 0.8]) poly([E(k - 0.06, 0.11), E(k + 0.08, 0.04), E(k - 0.04, 0.06)]);
     } else if (L.hairStyle === 'hood') {
       ctx.fillStyle = L.hair; ctx.beginPath(); ctx.arc(hx - fx * 2, hy - 2, r * 1.15, 0, 7); ctx.fill();
       ctx.fillStyle = '#000'; ctx.beginPath(); ctx.arc(hx + fx * 4, hy + fy * 4, r * 0.7, 0, 7); ctx.fill();
@@ -1717,7 +1723,7 @@ const DEFS = {
   shokei: { hero: true, walk: 175, idle: ['sIdle', 'sIdle2'], block: 'block', crouch: 'crouch', jump: 'jump', kick: 'jumpKick', victory: 'sVictory',
     punches: [['slashS', 'slashH']], punch: MOVES.slash, upper: MOVES.sUpper, upperP: ['sUpperS', 'sUpperH'],
     special: 'dash', seq: [4, 6] },
-  wanfu: { walk: 85, idle: ['idle', 'idle2'], victory: 'victory', think: 0.5, aggro: 0.5, armorAt: 3,
+  wanfu: { walk: 85, idle: ['idle', 'idle2'], victory: 'victory', think: 0.5, aggro: 0.5, armorAt: 3, slam: true,
     moves: { hit: { dmg: 0.5, st: 0.34, act: 0.1, rec: 0.38, reach: 112, type: 'high', p: ['punchS', 'punchH'], sfx: 'heavy' },
       kick: { dmg: 1, st: 0.42, act: 0.12, rec: 0.42, reach: 124, type: 'low', p: ['kickS', 'kickH'], sfx: 'heavy' } } },
   yamana: { walk: 140, idle: ['yIdle', 'yIdle2'], victory: 'yIdle', think: 0.42, aggro: 0.5, armorAt: 3, acrobat: true,
@@ -1828,6 +1834,8 @@ class Fighter {
     const roll = Math.floor(Math.random() * (D.frill ? 4 : 6));
     const pick = roll === 1 || roll === 2 ? 'hit' : roll === 0 ? 'kick' : null;
     if (Math.random() < 0.5) this.plan = Math.random() < 2 / 3 ? 'hit' : 'kick';
+    // Wan'fu's overhead slam: up close he grabs instead of punching (a grab goes through a block)
+    if (D.slam && pick && !(this.slamCD > performance.now()) && dist < 118 && foe.grounded && !foe.scripted && ['idle', 'walk', 'block', 'crouch'].includes(foe.state) && Math.random() < 0.3) return G.wanfuSlam(this, foe);
     if (D.moves.wheel && pick === 'hit' && dist > 150 && dist < 420 && Math.random() < 0.6) return this.cartwheel(dist);
     if (!pick || dist > D.moves[pick].reach + 4) return;
     if (D.frill && foe.state === 'crouch' && Math.random() < 0.6) return this.attack('kick');
@@ -1847,6 +1855,7 @@ class Fighter {
   /* -------------------------------------------------------- update */
   update(G, dt, foe) {
     this.t += dt;
+    if (this.slamming) G.slamStep(this, dt);
     const P = Rig.POSES;
     if (!this.scripted) switch (this.state) {
       case 'jumpKick': if (!this.hitDone) G.tryHit(this, foe, MOVES.jumpKick); break;
@@ -2587,6 +2596,36 @@ function frillThrow(fr, victim) {
     }, 170);
   }, 420);
 }
+// Wan'fu's slam: grab, hoist overhead, hold, then drive the victim into the floor (damage 2)
+G.wanfuSlam = function (w, v) {
+  Audio.sfx('catch'); w.grunt('atk', true);
+  w.set('attack', 'grab', 18); w.move = { st: 99, act: 0, rec: 0 }; w.movePoses = ['grab', 'grab']; w.vx = 0;
+  v.set('hurt', 'hitHi', 18); v.hurtT = 9; v.vx = 0; v.vy = 0; v.grounded = true; v.scripted = true; v.freeRot = true;
+  w.slamming = { v, t: 0, x0: v.x }; w.slamCD = performance.now() + 6000;
+};
+G.slamStep = function (w, dt) {
+  const S = w.slamming, v = S.v, k = Math.min(1, dt * 10); S.t += dt;
+  if ((!G.fighting || w.state !== 'attack') && S.t < 1.25) S.t = 1.25;   // round over or Wan'fu hit mid-hold: drop now
+  if (S.t < 0.25) { v.x += (w.x + w.face * 50 - v.x) * k; return; }
+  if (S.t < 1.25) {   // hoist and hold overhead, victim kicking
+    w.target = 'carry'; w.speed = 9; v.target = 'heldUp'; v.speed = 10;
+    v.x += (w.x + w.face * 6 - v.x) * k; v.y += (-215 * w.s - v.y) * k; v.pose.rot += (-90 - v.pose.rot) * k;
+    if (S.t > 0.7) v.pose.hipF = 10 + Math.sin(S.t * 30) * 14;
+    return;
+  }
+  if (!S.down) {   // drive down
+    S.down = true; w.target = 'slam'; w.speed = 22; Audio.sfx('whoosh');
+    v.scripted = false; v.freeRot = false; v.grounded = false; v.vy = 1100; v.vx = w.face * 140; v.state = 'thrown';
+    v.hp = Math.max(0, v.hp - 2); v.dmgHold = 0.5; v.grunt(v.hp <= 0 ? 'ko' : 'hurt', true);
+    return;
+  }
+  if (v.grounded || S.t > 1.8) {
+    w.slamming = null;
+    Audio.sfx('fall'); Audio.sfx('crunch'); FX.shake = 16; G.hitstop = 0.08; FX.blood(v.x, GY - 30, 0, 1.5); FX.dust(v.x, GY, 18);
+    if (v.hp <= 0) Fight.ko(w, v); else { v.set('down', 'down', 12); v.pose.rot = -88; }
+    w.set('idle', w.def.idle[0], 6);
+  }
+};
 function drawProjectile(pr, ctx) {
   const x = pr.x, y = GY + pr.y, t = pr.t;
   ctx.save(); ctx.globalCompositeOperation = 'lighter';

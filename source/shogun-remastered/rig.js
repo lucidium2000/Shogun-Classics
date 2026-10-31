@@ -115,7 +115,7 @@ const Rig = (() => {
     frill: {
       name: 'FRILL', s: 1.05, skin: '#0b0e16', gi: '#0d1120', pants: '#0a0d18', sleeve: 'full', fore: '#0d1120', hand: '#1a2236',
       // a woman (Chris, 2026-10-31): long black hair streaming behind her, face in shadow, glowing eyes
-      belt: '#1d2a44', band: null, hair: '#05070c', hairStyle: 'long', longHair: '#1c2850', eyes: '#d9f3ff', shadow: true,
+      belt: '#1d2a44', band: null, hair: '#05070c', hairStyle: 'long', longHair: '#1c2850', eyes: '#ff2414', shadow: true,
       shW: 44, waist: 30, limb: 0.95, weapon: null, rimCol: '#9fdcff',
     },
   };
@@ -468,9 +468,15 @@ const Rig = (() => {
       const bg = at(55, r * 0.55), bb = at(-60, r * 0.6); ctx.quadraticCurveTo(bg[0], bg[1], bb[0], bb[1]); ctx.closePath(); ctx.fill();
       ctx.strokeStyle = 'rgba(140,190,255,0.35)'; ctx.lineWidth = 1.6; ctx.beginPath();   // a cold sheen on the crown
       for (let th = -120; th <= 20; th += 10) { const q = at(th, r * 1.02); th === -120 ? ctx.moveTo(q[0], q[1]) : ctx.lineTo(q[0], q[1]); } ctx.stroke();
-      ctx.shadowColor = L.eyes; ctx.shadowBlur = 14; ctx.fillStyle = L.eyes;
-      for (const k of [0.45, 0.85]) { ctx.beginPath(); ctx.ellipse(hx + fx * r * k + ux * r * 0.05, hy + fy * r * k + uy * r * 0.05, 2.4, 1.3, a, 0, 7); ctx.fill(); }
-      ctx.shadowBlur = 0;
+      // menacing eyes (Chris, 2026-10-31): sunken shadow across the brow, a hard scowl, and slanted red slits that narrow toward the nose
+      const E = (f, u) => [hx + fx * r * f + ux * r * u, hy + fy * r * f + uy * r * u];
+      const poly = pts => { ctx.beginPath(); pts.forEach((q, i) => i ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1])); ctx.closePath(); ctx.fill(); };
+      ctx.fillStyle = 'rgba(0,0,0,0.75)'; poly([E(0.25, 0.32), E(1.0, 0.18), E(1.0, -0.2), E(0.25, -0.12)]);
+      ctx.fillStyle = '#03040a'; poly([E(0.22, 0.42), E(1.02, 0.12), E(1.02, 0.02), E(0.22, 0.26)]);
+      ctx.shadowColor = L.eyes; ctx.shadowBlur = 16; ctx.fillStyle = L.eyes;
+      for (const k of [0.4, 0.8]) poly([E(k - 0.17, 0.2), E(k + 0.15, 0.04), E(k + 0.13, -0.04), E(k - 0.15, 0.06)]);
+      ctx.shadowBlur = 0; ctx.fillStyle = '#ffe6a8';
+      for (const k of [0.4, 0.8]) poly([E(k - 0.06, 0.11), E(k + 0.08, 0.04), E(k - 0.04, 0.06)]);
     } else if (L.hairStyle === 'hood') {
       ctx.fillStyle = L.hair; ctx.beginPath(); ctx.arc(hx - fx * 2, hy - 2, r * 1.15, 0, 7); ctx.fill();
       ctx.fillStyle = '#000'; ctx.beginPath(); ctx.arc(hx + fx * 4, hy + fy * 4, r * 0.7, 0, 7); ctx.fill();
