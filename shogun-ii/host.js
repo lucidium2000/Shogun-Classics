@@ -6,6 +6,10 @@ const KOF = (() => {
   const td = new TextDecoder('latin1');
   const te = new TextEncoder();
   let ex, mem, files, canvas, ctx2d, imageData, onStatus = () => {};
+  // pause: the engine's own Esc quits a fight, so Start opens a menu here instead.
+  // A fight starts when the round call plays; any new song means we left it.
+  let inFight = false, paused = false, pausedAt = 0, pausedFor = 0, pendingResume = false, onPause = null;
+  const samplePaths = [];
   const EXIT = { exit: true };
 
   // ---------------------------------------------------------------- memory
@@ -130,10 +134,12 @@ const KOF = (() => {
     // victory phrases play at double volume
     if (/\/win\.wav$/i.test(path)) loud.add(id);
     sampleIds.set(path, id);
+    samplePaths[id] = path;
     return id;
   }
 
   function samplePlay(id, vol, pan, freq, loop) {
+    if (/\/(rd\d|fight)\.wav$/i.test(samplePaths[id] || '')) inFight = true;
     const ac = audio(), buf = samples[id];
     if (!ac || !buf || ac.state !== 'running') return;
     const src = ac.createBufferSource();
@@ -205,6 +211,7 @@ const KOF = (() => {
   }
 
   function midiLoad(path) {
+    inFight = false;
     if (midiIds.has(path)) return midiIds.get(path);
     const f = getFile(path);
     if (!f) return -1;
@@ -344,6 +351,7 @@ const KOF = (() => {
     return mp3Cache.get(path);
   }
   function mp3Open(path) {
+    inFight = false;
     if (path === mp3Path) return 1;          // already the current song
     mp3Close();
     if (!getFile(path)) return 0;
@@ -394,7 +402,7 @@ const KOF = (() => {
   })();
 
   function setKey(code, down) {
-    if (!ex) return;
+    if (!ex || (paused && down)) return;
     const k = CODE_TO_KEY[code];
     if (k === undefined) return false;
     u8()[ex.web_key_ptr() + k] = down ? 1 : 0;
@@ -406,6 +414,7 @@ const KOF = (() => {
   let touchBits = 0, gamepadBits = 0, padStart = false;
   function setPad() { if (ex) i32()[ex.web_pad_ptr() >> 2] = touchBits | gamepadBits; }
   function touchPad(bit, down) {
+    if (paused && down) return;
     const before = touchBits;
     touchBits = down ? (touchBits | bit) : (touchBits & ~bit);
     if (down && !(before & bit) && ex) { i32()[ex.web_keybuf_ptr() >> 2]++; i32()[ex.web_pad_latch_ptr() >> 2] |= bit; }
@@ -431,10 +440,10 @@ const KOF = (() => {
       if (b(1)) bits |= 128;  // B / Circle: heavy kick
       // getGamepads() hands back a fresh snapshot each frame, so the Start
       // state has to live here (it used to fire Enter on every frame held)
-      if (!!b(9) !== padStart) { padStart = !!b(9); setKey('Enter', padStart); }
+      if (!!b(9) !== padStart) { padStart = !!b(9); if (!padStart || !startPause()) setKey('Enter', padStart); }
       break;
     }
-    if (bits & ~gamepadBits && ex) { i32()[ex.web_keybuf_ptr() >> 2]++; i32()[ex.web_pad_latch_ptr() >> 2] |= bits & ~gamepadBits; }
+    if (bits & ~gamepadBits && ex && !paused) { i32()[ex.web_keybuf_ptr() >> 2]++; i32()[ex.web_pad_latch_ptr() >> 2] |= bits & ~gamepadBits; }
     gamepadBits = bits;
     setPad();
     requestAnimationFrame(pollGamepads);
@@ -472,6 +481,7 @@ const KOF = (() => {
   }
 
   function resume() {
+    if (paused) { pendingResume = true; return; }
     ex.asyncify_start_rewind(asyncData);
     rewinding = true;
     run();
@@ -487,6 +497,7 @@ const KOF = (() => {
   async function start(opts) {
     canvas = opts.canvas;
     onStatus = opts.onStatus || onStatus;
+    onPause = opts.onPause || null;
     ctx2d = canvas.getContext('2d');
     files = opts.files;
     const overrides = opts.overrides || {};
@@ -495,7 +506,7 @@ const KOF = (() => {
     const imports = {
       env: {
         js_yield,
-        js_now: () => performance.now(),
+        js_now: () => performance.now() - pausedFor,
         js_file_size: p => { const f = getFile(cstr(p)); return f ? f.data.length : -1; },
         js_file_read: (p, dst) => { const f = getFile(cstr(p)); if (f) u8().set(f.data, dst); },
         js_scan: (pat, dirs, out, max) => {
@@ -544,6 +555,7 @@ const KOF = (() => {
 
     window.addEventListener('keydown', e => {
       if (e.repeat) { if (CODE_TO_KEY[e.code] !== undefined) e.preventDefault(); return; }
+      if (e.code === 'Enter' && startPause()) { e.preventDefault(); return; }
       if (setKey(e.code, true)) e.preventDefault();
     });
     window.addEventListener('keyup', e => { if (setKey(e.code, false)) e.preventDefault(); });
@@ -552,5 +564,24 @@ const KOF = (() => {
     run();
   }
 
-  return { loadPak, start, touchPad, setKey, audio };
+  // Start during a fight opens the pause menu (true) instead of pressing Enter
+  function startPause() {
+    if (!inFight || paused || exited || !onPause) return false;
+    setPaused(true); onPause();
+    return true;
+  }
+  function setPaused(on) {
+    if (on === paused) return;
+    paused = on;
+    if (ex) { const m = u8(), k = ex.web_key_ptr(); m.fill(0, k, k + 128); }
+    touchBits = 0; setPad();
+    if (on) { pausedAt = performance.now(); if (actx) actx.suspend(); }
+    else {
+      pausedFor += performance.now() - pausedAt;
+      if (actx) actx.resume();
+      if (pendingResume) { pendingResume = false; resume(); }
+    }
+  }
+
+  return { loadPak, start, touchPad, setKey, audio, startPause, setPaused, isPaused: () => paused };
 })();
