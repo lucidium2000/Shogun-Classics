@@ -403,7 +403,7 @@ footer a { color: var(--ink); }
   }
   const PICK = {
     '1996': () => { playQB('T250 O0E O0G O0E- O0E O0G- O0G'); setTimeout(() => playQB('T250 O1E- O1E- O1E O1E O1E- O1E- O1E O1E'), 1440); },   // Wan'fu's entrance, the first fight
-    remastered: () => { say('Fatality', 0.75, 0.05); tone(90, 40, 0, 0.6, 'sine', 0.7); noise(0, 0.3, 0.3); },
+    remastered: () => { say('Kye-shah-koo!', 0.75, 0.05); tone(90, 40, 0, 0.6, 'sine', 0.7); noise(0, 0.3, 0.3); },
     ii: () => {
       const ac = audio(); if (!ac) return;
       if (cheers) { const s = ac.createBufferSource(), g = ac.createGain(); g.gain.value = 1.4; s.buffer = cheers; s.connect(g); g.connect(ac.destination); s.start(); }
