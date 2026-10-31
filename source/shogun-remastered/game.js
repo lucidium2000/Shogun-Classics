@@ -827,10 +827,10 @@ function fatalHead(F, once, dt) {
   // Keero steps to sword range, draws the katana back high, then cuts flat through the neck
   if (t < 0.7) { if (approach(a, d.x - a.face * 135, dt, 260)) { a.target = a.def.idle[0]; } }
   once('wind', 0.72, () => { a.target = 'slashS'; a.speed = 10; Audio.sfx('whoosh'); });
-  once('swing', 1.08, () => { a.state = 'script'; a.target = 'slashH'; a.speed = 46; Audio.sfx('slash'); });
+  once('swing', 1.08, () => { a.state = 'script'; a.target = 'slashH'; a.speed = 46; Audio.sfx('slash'); a.grunt('atk', true); });
   if (t > 1.08 && t < 1.2) a.x += a.face * 380 * dt;
   once('rip', 1.15, () => {
-    Audio.sfx('sliceHit'); Audio.sfx('crunch'); Audio.sfx('blood');
+    Audio.sfx('sliceHit'); Audio.sfx('crunch'); Audio.sfx('blood'); d.grunt('ko', true);
     const J = d.solve(); d.drawOpts = { noHead: true };
     slashArc(a.x, J.N[1] + 10, 120, -0.9, 0.5, a.face);
     FX.gibs.push(new FX.Gib(J, 'head', J.Hd, a.face * 160, -1050, a.face * 9, { restOff: 14 }));
@@ -849,13 +849,13 @@ function fatalPit(F, once, dt) {
   const a = F.att, d = F.def, t = F.t, thrown = F.kind === 'throw';
   if (t < 0.7) { if (approach(a, d.x - a.face * (thrown ? 40 : 80), dt, 220)) a.target = a.def.idle[0]; }
   if (thrown) {
-    once('grab', 0.75, () => { a.target = 'grab'; a.speed = 16; Audio.sfx('catch'); });
+    once('grab', 0.75, () => { a.target = 'grab'; a.speed = 16; Audio.sfx('catch'); d.grunt('hurt', true); });
     once('lift', 1.1, () => { a.target = 'carry'; a.speed = 9; d.freeRot = true; d.target = 'heldUp'; d.speed = 8; d.grounded = true; });
     if (t > 1.1 && t < 1.8) { d.x += (a.x - d.x) * Math.min(1, dt * 8); d.y += (-190 - d.y) * Math.min(1, dt * 8); d.pose.rot += (-90 - d.pose.rot) * Math.min(1, dt * 8); }
-    once('toss', 1.8, () => { Audio.sfx('whoosh'); d.state = 'launch'; d.grounded = false; d.vy = -1700; d.vx = a.face * 60; });
+    once('toss', 1.8, () => { Audio.sfx('whoosh'); a.grunt('atk', true); d.state = 'launch'; d.grounded = false; d.vy = -1700; d.vx = a.face * 60; });
   } else {
     once('crouch', 0.72, () => { a.target = a.def.upperP[0]; a.speed = 14; Audio.sfx('whoosh'); });
-    once('up', 1.05, () => { a.state = 'script'; a.target = a.def.upperP[1]; a.speed = 44; a.x += a.face * 20; Audio.sfx('heavy');
+    once('up', 1.05, () => { a.state = 'script'; a.target = a.def.upperP[1]; a.speed = 44; a.x += a.face * 20; Audio.sfx('heavy'); a.grunt('atk', true); d.grunt('hurt', true);
       slashArc(a.x + a.face * 40, GY - 150, 110, 1.3, -1.2, a.face); FX.blood(d.x, GY - 160, a.face, 1.5); FX.shake = 12; G.hitstop = 0.1; d.state = 'launch'; d.grounded = false; d.vy = -1800; d.vx = a.face * 40; d.freeRot = true; });
   }
   if (d.state === 'launch' && !G.pit) d.pose.rot -= dt * 500;
@@ -868,7 +868,7 @@ function fatalPit(F, once, dt) {
     d.vy += 2200 * dt; d.y += d.vy * dt; d.pose.rot += (-84 - d.pose.rot) * Math.min(1, dt * 5);
     if (d.y >= -70) {
       d.y = -70; d.vy = 0; F.done.impale = 1;
-      Audio.sfx('spikes'); Audio.sfx('blood'); FX.shake = 22; FX.flash = 0.5; FX.flashCol = '#800';
+      Audio.sfx('spikes'); Audio.sfx('blood'); d.grunt('ko', true); FX.shake = 22; FX.flash = 0.5; FX.flashCol = '#800';
       for (let i = 0; i < 4; i++) FX.bloodJet(W / 2 - 60 + i * 40, GY - 90, -Math.PI / 2 + (Math.random() - 0.5), 420, 14);
       F.impaleT = t;
     }
@@ -886,7 +886,7 @@ function fatalRun(F, once, dt) {
   once('lunge', 0.6, () => { a.state = 'script'; a.target = 'thrust'; a.speed = 30; Audio.sfx('dash'); });
   if (t > 0.6 && t < 0.78) a.x += a.face * 470 * dt;
   once('pierce', 0.78, () => {
-    Audio.sfx('sliceHit'); Audio.sfx('blood'); d.target = 'hitLo'; d.speed = 20; G.hitstop = 0.18; FX.shake = 12;
+    Audio.sfx('sliceHit'); Audio.sfx('blood'); d.grunt('hurt', true); d.target = 'hitLo'; d.speed = 20; G.hitstop = 0.18; FX.shake = 12;
     a.drawOpts = { bloodBlade: true };
   });
   if (t > 0.8 && t < 1.7 && d.J) FX.bloodJet(d.x + a.face * 26, GY - 140 * d.s, a.face > 0 ? -0.3 : Math.PI + 0.3, 380, 2);
@@ -894,7 +894,7 @@ function fatalRun(F, once, dt) {
   if (t > 1.7 && t < 2.1) a.x -= a.face * 220 * dt;
   once('raise', 2.15, () => { a.target = 'cleaveS'; a.speed = 12; Audio.sfx('whoosh'); });
   once('cleave', 2.55, () => {
-    a.state = 'script'; a.target = 'cleaveH'; a.speed = 46; slashArc(a.x, GY - 200, 150, -1.9, 0.4, a.face); Audio.sfx('slash'); Audio.sfx('crunch'); Audio.sfx('blood');
+    a.state = 'script'; a.target = 'cleaveH'; a.speed = 46; slashArc(a.x, GY - 200, 150, -1.9, 0.4, a.face); a.grunt('atk', true); d.grunt('ko', true); Audio.sfx('slash'); Audio.sfx('crunch'); Audio.sfx('blood');
     const J = d.solve(); d.drawOpts = { only: 'lower' };
     FX.gibs.push(new FX.Gib(J, 'upper', J.H, a.face * 210, -620, a.face * 3.2, { restOff: 34, rim: G.stage.rim, light: G.stage.light }));
     FX.shake = 18; G.hitstop = 0.16; FX.flash = 0.4; FX.flashCol = '#900';

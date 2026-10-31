@@ -96,11 +96,11 @@ class Fighter {
     return true;
   }
   // a grunt in this fighter's voice: Frill's is a woman's, the rest share the male set,
-  // pitched a little lower for Wan'fu and higher for Yamana. Not every swing, so it doesn't nag.
-  grunt(kind) {
+  // pitched a little lower for Wan'fu and higher for Yamana. In a fight a swing or a hit grunts
+  // a third of the time (Chris); a knockout always does, and so does every blow of a fatality (sure).
+  grunt(kind, sure) {
     const now = performance.now();
-    if (kind === 'atk' && (Math.random() > 0.45 || now - (this.gruntAt || 0) < 900)) return;
-    if (kind === 'hurt' && now - (this.gruntAt || 0) < 350) return;
+    if (!sure && kind !== 'ko' && (Math.random() > 1 / 3 || now - (this.gruntAt || 0) < (kind === 'atk' ? 900 : 350))) return;
     this.gruntAt = now;
     Audio.grunt(this.key === 'frill' ? 'f' : 'm', kind, { wanfu: 0.86, yamana: 1.08 }[this.key] || 1);
   }
