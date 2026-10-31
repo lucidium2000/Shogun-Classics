@@ -5529,6 +5529,11 @@ function patchSource(name, src, mode) {
   if (name === 'SHOGUN') {
     rep('RANDOMIZE TIMER\nGOTO NP\n', 'RANDOMIZE TIMER\n');
     rep('DECLARE SUB SHOGUNL2 (PN$)\n', 'DECLARE SUB SHOGUNL2 (PN$)\nDIM SHARED RTY\n');
+    // Losing the second round only ran LEND (the losing scene) in the first fight; Sho'ki's
+    // Wan'fu fight and both Yamana fights just hit END and dropped you back at the title.
+    for (const n of ['2', '3', '4'])
+      rep('IF RDT = 0 THEN LET RDT = 1: PRINT "PRESS (ENTER) TO BEGIN NEXT ROUND": COLOR 0: INPUT B: GOTO NEXTROUND' + n + '\nEND\n',
+        'IF RDT = 0 THEN LET RDT = 1: PRINT "PRESS (ENTER) TO BEGIN NEXT ROUND": COLOR 0: INPUT B: GOTO NEXTROUND' + n + '\nFOR T = T TO 10000: NEXT T\nRUN "A:LEND"\n');
   }
   // Uppercutting Yamana: the second frame cleared the screen and then played its note, so the
   // screen sat black for the length of the note. Play the note first, then redraw.
