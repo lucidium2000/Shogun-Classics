@@ -168,7 +168,7 @@
     <p id="msg"></p>
   </div>
 </div>
-<script src="host.js?v=31"></script>
+<script src="host.js?v=32"></script>
 <script>
 (async () => {
   const canvas = document.getElementById('screen');
@@ -273,8 +273,8 @@
 
   let wasm, files;
   try {
-    const wasmP = fetch('kof91.wasm?v=31').then(r => { if (!r.ok) throw new Error('kof91.wasm missing'); return r.arrayBuffer(); });
-    files = await KOF.loadPak(['shogun2-data-1.wasm?v=31', 'shogun2-data-2.wasm?v=31', 'shogun2-data-3.wasm?v=31'], f => bar.style.width = Math.round(f * 100) + '%');
+    const wasmP = fetch('kof91.wasm?v=32').then(r => { if (!r.ok) throw new Error('kof91.wasm missing'); return r.arrayBuffer(); });
+    files = await KOF.loadPak(['shogun2-data-1.wasm?v=32', 'shogun2-data-2.wasm?v=32', 'shogun2-data-3.wasm?v=32'], f => bar.style.width = Math.round(f * 100) + '%');
     wasm = await wasmP;
   } catch (e) {
     msg.textContent = 'Could not load the game files: ' + e.message;

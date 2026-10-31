@@ -33,7 +33,7 @@ sub(r'\nmain\(\)\n', '\nint main(void)\n', expect=1)
 sub(r'while\s*\(\s*!retrace_count\s*\)\s*;;?', 'while (retrace_count <= 0) al_wait_retrace();')
 
 # exit() should stop the game cleanly in the page
-src = src.replace('#include "allegro.h"\n', '#include "allegro.h"\nvoid exit_hook(int);\n#define exit(c) exit_hook(c)\nvoid web_music(const char *);\nvoid web_music_stop(void);\nint web_find_char(const char *, int);\nvoid web_win_voice(int);\nint web_story_stage(int);\nint web_stage_index(const char *);\nextern int *web_dbgp[12];\nvoid web_stage_load(const char *);\nvoid web_stage_back(BITMAP *);\nvoid web_stage_front(BITMAP *);\nvoid web_names(const char *, const char *);\nvoid web_draw_names(BITMAP *);\n', 1)
+src = src.replace('#include "allegro.h"\n', '#include "allegro.h"\nvoid exit_hook(int);\n#define exit(c) exit_hook(c)\nvoid web_music(const char *);\nvoid web_music_stop(void);\nint web_find_char(const char *, int);\nvoid web_win_voice(int);\nint web_story_stage(int);\nint web_stage_index(const char *);\nextern int *web_dbgp[12];\nvoid web_stage_load(const char *);\nvoid web_stage_back(BITMAP *);\nvoid web_stage_front(BITMAP *);\nvoid web_names(const char *, const char *);\nvoid web_clear_input(void);\nvoid web_draw_names(BITMAP *);\n', 1)
 
 # ---- Shogun II restoration changes ------------------------------------
 # Title music: the Shogun song plays from the intro through the main menus,
@@ -133,6 +133,17 @@ sub(r'(\n\t+Bing\(\);)(\n\t+sel[12](?:--|\+\+) ;)', r'\1 rest(140) ;\2', expect=
 sub(r'(void blit_Bkgd \(void\)\n\{.*?)\n\}\n', r'\1\n   web_stage_back(zoomscreen) ;\n}\n', count=1, flags=re.S, expect=1)
 sub(r'if \(foreground\)(\s*)masked_blit \( Frgd, zoomscreen ,', r'web_stage_front(zoomscreen) ;\n\tif (foreground)\1masked_blit ( Frgd, zoomscreen ,', expect=8)
 sub(r'(zoomscreen = create_bitmap\( Bkgd->w, Bkgd->h\) ;)', r'\1\n\tweb_stage_load(bkgdname[bgd]) ;', expect=1)
+
+# Stage select still skipped itself: the button that picked the fighter was
+# remembered as a tap and replayed on the stage screen's first frame.  Clear
+# every remembered press once everything is let go, and only confirm on a
+# fresh press made on this screen
+sub(r'(\n   fx =1 ;\n\n   retrace_count = 0 ;\n\n   poll_joystick\(\);\n\n   while \( cx \))',
+    r'\n   web_clear_input() ; web_sok = 1 ;\1', expect=1)
+sub(r'("< select background >".*?\n\tif \( )(\(key\[p2_spunch\]\) \|\| \(key\[p2_skick\]\) \n\t\t  \|\| \(key\[p2_wpunch\]\) \|\| \(key\[p2_wkick\]\)\n          \|\| \( key\[KEY_ENTER\]\) \n\t\t  \|\| P1_WK \|\| P1_SK \|\| P1_WP \|\| P1_SP )\)',
+    r'\1web_press( \2 ))', count=1, flags=re.S, expect=1)
+sub(r'(\nstatic int web_sdir, web_sdir_new ;\n)',
+    r'\1static int web_sok ;\nstatic int web_press(int down) { int fresh = down && !web_sok ; web_sok = down ; return fresh ; }\n', expect=1)
 
 # Fighter names under the life bars (the engine never drew them): read from
 # each fighter's char.ini when the fight loads, drawn with a small pixel font

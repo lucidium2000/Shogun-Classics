@@ -1073,3 +1073,12 @@ void web_mp3_close(void) { js_mp3_close(); }
 
 /* lets stagefx.c read data files from the pack */
 unsigned char *web_read_file(const char *filename, int *size) { return read_file(filename, size); }
+
+/* drop every press remembered from before (latched taps, replayed ghosts,
+   pad taps): a new screen starts with nothing pressed */
+void web_clear_input(void)
+{
+   memset(key_latch, 0, sizeof(key_latch));
+   clear_ghosts();
+   pad_latch = 0;
+}

@@ -216,7 +216,7 @@ MOVES = {
     'ghurt':  [13, 14],
     'ko':     [17, 19, 20, 21, 22],
     # walks in, squares up, drops into the side-on guard
-    'intro':  [23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, '45', '45'],
+    'intro':  [23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 33, '45', '45', '45'],
     # the front-facing poses are his victory celebration
     'outwin': [36, 37, 38, 39, 40, 41, 42, 41, 42, 41, 42],
     'wpunch': [47, 46, 46, 47],
