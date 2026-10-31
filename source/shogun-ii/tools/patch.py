@@ -68,7 +68,7 @@ sub(r'\t\t\t\tload_win1 \(\);\n', '\t\t\t\tload_win1 (); web_win_voice(sel1);\n'
 
 # Story mode fights each opponent in their own place; the other modes use the stage picked
 # on the stage-select screen
-sub(r'\nforeground = animated = 0 ;\n', '\nforeground = animated = 0 ;\n   if (gmode == 2 || bgd < 0 || bgd >= nbbkgd) bgd = web_story_stage(sel2) ;\n', expect=1)
+sub(r'\nforeground = animated = 0 ;\n', '\nforeground = animated = 0 ;\n   if (bgd < 0 || bgd >= nbbkgd) bgd = web_story_stage(sel2) ;\n', expect=1)
 
 # Difficulty against the computer starts on EASY (it was MEDIUM)
 sub(r'\t   cx = 1 ;\n\t   cy = 42 ;\n\n\t   diff = 1 ;\n', '\t   cx = 1 ;\n\t   cy = 27 ;\n\n\t   diff = 0 ;\n', expect=1)
@@ -88,10 +88,10 @@ for P, A, V in (('2', '1', '2'), ('', '2', '1')):
 # Stage select: the button that picked the fighter was still held when this
 # screen opened, so it confirmed the first stage on its own frame and the
 # screen never seemed to work.  Wait for every button to be let go first,
-# step one stage per press, and skip the screen in story mode (each
-# opponent has a home stage there)
+# step one stage per press.  In story mode the screen opens on the
+# opponent's home stage, and the player can still pick another
 sub(r'\n   fx =1 ;\n\n   retrace_count = 0 ;\n\n   poll_joystick\(\);\n\n   while \( cx \)',
-    '\n   if (gmode == 2) cx = 0 ;\n'
+    '\n'
     '   do { poll_joystick() ; al_wait_retrace() ; }\n'
     '   while ( cx && ( key[KEY_ENTER] || key[p2_spunch] || key[p2_skick] || key[p2_wpunch] || key[p2_wkick]\n'
     '          || P1_WK || P1_SK || P1_WP || P1_SP || P1_LT || P1_RT || key[p2_left] || key[p2_right] ) ) ;\n'
@@ -152,7 +152,7 @@ sub(r'(\n   blit \( PBar, virtscreen, 0, 0, 312-spower2, 190,spower2, 6 \) ;\n)'
 
 # The tournament arena is the home stage: it's the first pick on the stage-select
 # screen and the first fight of a story run
-sub(r'\n   cx = 1 ;\n   bgd = 1 ;\n', '\n   cx = 1 ;\n   bgd = web_stage_index("arena.pcx") ;\n', expect=1)
+sub(r'\n   cx = 1 ;\n   bgd = 1 ;\n', '\n   cx = 1 ;\n   bgd = (gmode == 2) ? web_story_stage(sel2) : web_stage_index("arena.pcx") ;\n', expect=1)
 
 # Special-move inputs: the engine dropped a motion the moment any state not
 # in the sequence showed up (the neutral between back and forward, the
