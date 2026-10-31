@@ -147,7 +147,7 @@
     <p id="msg"></p>
   </div>
 </div>
-<script src="host.js?v=22"></script>
+<script src="host.js?v=23"></script>
 <script>
 (async () => {
   const canvas = document.getElementById('screen');
@@ -251,8 +251,8 @@
 
   let wasm, files;
   try {
-    const wasmP = fetch('kof91.wasm?v=22').then(r => { if (!r.ok) throw new Error('kof91.wasm missing'); return r.arrayBuffer(); });
-    files = await KOF.loadPak(['shogun2-data-1.wasm?v=22', 'shogun2-data-2.wasm?v=22'], f => bar.style.width = Math.round(f * 100) + '%');
+    const wasmP = fetch('kof91.wasm?v=23').then(r => { if (!r.ok) throw new Error('kof91.wasm missing'); return r.arrayBuffer(); });
+    files = await KOF.loadPak(['shogun2-data-1.wasm?v=23', 'shogun2-data-2.wasm?v=23'], f => bar.style.width = Math.round(f * 100) + '%');
     wasm = await wasmP;
   } catch (e) {
     msg.textContent = 'Could not load the game files: ' + e.message;
@@ -288,6 +288,19 @@
     });
   };
   go.onclick = begin;
+  // gamepad on the PRESS START screen: A or Start begins. A button still held
+  // from the collection menu must be let go first, so it can't skip straight in.
+  const held = {};
+  (function padStart() {
+    if (overlay.style.display === 'none') return;
+    for (const gp of (navigator.getGamepads ? navigator.getGamepads() : [])) {
+      if (!gp) continue;
+      const down = !!((gp.buttons[0] && gp.buttons[0].pressed) || (gp.buttons[9] && gp.buttons[9].pressed));
+      if (down && held[gp.index] === false && !go.disabled) { go.click(); return; }
+      held[gp.index] = down;
+    }
+    requestAnimationFrame(padStart);
+  })();
 })();
 </script>
 </body>

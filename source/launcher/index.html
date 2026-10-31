@@ -311,7 +311,7 @@ footer a { color: var(--ink); }
   addEventListener('pageshow', () => { document.body.classList.remove('going'); games.forEach(g => g.classList.remove('chosen')); });
   games.forEach((g, i) => { g.addEventListener('mouseenter', () => pick(i)); g.addEventListener('focus', () => pick(i)); });
   addEventListener('keydown', e => {
-    if (e.defaultPrevented) return;
+    if (e.defaultPrevented || stage) return;
     if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { pick(sel + 1, true); e.preventDefault(); }
     else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { pick(sel - 1, true); e.preventDefault(); }
     else if (e.key === 'Enter' && !e.defaultPrevented && document.activeElement === document.body) games[sel].click();
@@ -324,10 +324,11 @@ footer a { color: var(--ink); }
       const b = i => !!(gp.buttons[i] && gp.buttons[i].pressed), ax = gp.axes[0] || 0;
       const now = { l: b(14) || ax < -.5, r: b(15) || ax > .5, go: b(0) || b(9) };
       const was = last[gp.index] || {};
+      last[gp.index] = now;
+      if (stage) continue; // a game is open: the menu behind it stays still
       if (now.l && !was.l) pick(sel - 1, true);
       if (now.r && !was.r) pick(sel + 1, true);
-      if (now.go && !was.go && !stage) { if (intro) introTap(); else games[sel].click(); }
-      last[gp.index] = now;
+      if (now.go && !was.go) { if (intro) introTap(); else games[sel].click(); }
     }
     raf = requestAnimationFrame(poll);
   }
