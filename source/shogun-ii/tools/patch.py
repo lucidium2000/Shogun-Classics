@@ -33,7 +33,7 @@ sub(r'\nmain\(\)\n', '\nint main(void)\n', expect=1)
 sub(r'while\s*\(\s*!retrace_count\s*\)\s*;;?', 'while (retrace_count <= 0) al_wait_retrace();')
 
 # exit() should stop the game cleanly in the page
-src = src.replace('#include "allegro.h"\n', '#include "allegro.h"\nvoid exit_hook(int);\n#define exit(c) exit_hook(c)\nvoid web_music(const char *);\nvoid web_music_stop(void);\nint web_find_char(const char *, int);\nvoid web_win_voice(int);\nint web_story_stage(int);\n', 1)
+src = src.replace('#include "allegro.h"\n', '#include "allegro.h"\nvoid exit_hook(int);\n#define exit(c) exit_hook(c)\nvoid web_music(const char *);\nvoid web_music_stop(void);\nint web_find_char(const char *, int);\nvoid web_win_voice(int);\nint web_story_stage(int);\nint web_stage_index(const char *);\nextern int *web_dbgp[12];\nvoid web_stage_load(const char *);\nvoid web_stage_back(BITMAP *);\nvoid web_stage_front(BITMAP *);\n', 1)
 
 # ---- Shogun II restoration changes ------------------------------------
 # Title music: the Shogun song plays from the intro through the main menus,
@@ -66,9 +66,77 @@ sub(r'\t\tfx = cx ;\n', '\t\tfx = cx + sel1 - 1 ;\n', expect=1)
 sub(r'\t\t\t\tload_win2 \(\);\n', '\t\t\t\tload_win2 (); web_win_voice(sel2);\n', expect=1)
 sub(r'\t\t\t\tload_win1 \(\);\n', '\t\t\t\tload_win1 (); web_win_voice(sel1);\n', expect=1)
 
-# Against the computer the game never chose a stage (bgd was left over from the scrolling
-# select pattern), so each opponent now fights in their own place
-sub(r'\nforeground = animated = 0 ;\n', '\nforeground = animated = 0 ;\n   if (gmode || bgd < 0 || bgd >= nbbkgd) bgd = web_story_stage(sel2) ;\n', expect=1)
+# Story mode fights each opponent in their own place; the other modes use the stage picked
+# on the stage-select screen
+sub(r'\nforeground = animated = 0 ;\n', '\nforeground = animated = 0 ;\n   if (gmode == 2 || bgd < 0 || bgd >= nbbkgd) bgd = web_story_stage(sel2) ;\n', expect=1)
+
+# Difficulty against the computer starts on EASY (it was MEDIUM)
+sub(r'\t   cx = 1 ;\n\t   cy = 42 ;\n\n\t   diff = 1 ;\n', '\t   cx = 1 ;\n\t   cy = 27 ;\n\n\t   diff = 0 ;\n', expect=1)
+
+# menu loops that test the pad without polling it: the touch/gamepad punch
+# button never registered on NEXT OPPONENT, GAME OVER/ending and the pause menu
+sub(r'\t\t\trest\(20\);\n\n\n(\t\t\t?)if \( \(key\[p2_spunch\]\)', r'\t\t\trest(20);\n\t\t\tpoll_joystick();\n\n\1if ( (key[p2_spunch])', expect=2)
+sub(r'(\n\t\t\t\t  textout_centre \( virtscreen , font ,"CONTINUE",)', r'\n\t\t\t\t  poll_joystick();\1', expect=1)
+
+# HPOWER: the bar used to fill only from special moves (+10 each).  Landing a
+# hit now adds 3 for the attacker and 2 for the one taking it, so a full bar
+# (60) and the super it unlocks come up a few times a fight
+for P, A, V in (('2', '1', '2'), ('', '2', '1')):
+    sub(r'(\thflag%s\+\+ ;\n\n\tif \( hflag%s < (?:17|25) \) life%s = life%s - damag%s ;)' % (P, P, V, V, V),
+        r'\1\n\tif ( hflag%s == 1 ) { spower%s += 3 ; spower%s += 2 ; }' % (P, A, V), expect=3)
+
+# Stage select: the button that picked the fighter was still held when this
+# screen opened, so it confirmed the first stage on its own frame and the
+# screen never seemed to work.  Wait for every button to be let go first,
+# step one stage per press, and skip the screen in story mode (each
+# opponent has a home stage there)
+sub(r'\n   fx =1 ;\n\n   retrace_count = 0 ;\n\n   poll_joystick\(\);\n\n   while \( cx \)',
+    '\n   if (gmode == 2) cx = 0 ;\n'
+    '   do { poll_joystick() ; al_wait_retrace() ; }\n'
+    '   while ( cx && ( key[KEY_ENTER] || key[p2_spunch] || key[p2_skick] || key[p2_wpunch] || key[p2_wkick]\n'
+    '          || P1_WK || P1_SK || P1_WP || P1_SP || P1_LT || P1_RT || key[p2_left] || key[p2_right] ) ) ;\n'
+    '\n   fx =1 ;\n\n   retrace_count = 0 ;\n\n   poll_joystick();\n\n   while ( cx )', expect=1)
+sub(r'(260, 160\) ;\n\n\t\tBing\(\);)', r'\1\n\t\trest(180) ;', expect=2)
+
+# ...and holding a direction (or a touch pad that reports a hold) still
+# spun through the stages, so a stage now moves once per press: the
+# direction has to be let go before it moves again
+sub(r'(\n\tif\( P1_LT \|\| \(key\[p2_left\]\) \) \n\n\t\{\n\t\tbgd-- ;)',
+    r'\n\t{ int d = ( P1_LT || key[p2_left] ) ? -1 : ( P1_RT || key[p2_right] ) ? 1 : 0 ;'
+    r' web_sdir_new = ( d != web_sdir ) ? d : 0 ; web_sdir = d ; }'
+    r'\n\tif( web_sdir_new < 0 ) \n\n\t{\n\t\tbgd-- ;', expect=1)
+sub(r'\n\tif\( P1_RT \|\| \(key\[p2_right\]\) \) \n\n\t\{\n        bgd\+\+ ;',
+    r'\n\tif( web_sdir_new > 0 ) \n\n\t{\n        bgd++ ;', expect=1)
+sub(r'(\n   fx =1 ;\n\n   retrace_count = 0 ;\n\n   poll_joystick\(\);\n\n   while \( cx \))',
+    r'\n   web_sdir = web_sdir_new = 0 ;\1', expect=1)
+sub(r'(\nint bkgdlim ;\n)', r'\1static int web_sdir, web_sdir_new ;\n', expect=1)
+# the stage screen only looked at the pad every third frame, so a quick tap
+# could fall between looks; with one move per press it can look every frame
+sub(r'("< select background >".*?\nif \(fx<)1(\)\n)', r'\g<1>9\2', count=1, flags=re.S, expect=1)
+
+# point the test hook at the fight state
+sub(r'(\n/\*+ THE REAL GAME STARTS HERE \*+/\n)',
+    r'\n   { int *p[12] = { &actual, &actual2, &spower1, &spower2, &life1, &life2, &spr1x, &spr2x, &spr1y, &spr2y, &sol1, &cx } ;'
+    r' int i ; for (i = 0 ; i < 12 ; i++) web_dbgp[i] = p[i] ; }\1', expect=1)
+
+# Character select: the starting fighter's portrait and name never showed
+# until you moved, because "previous pick" started at 2, which is the
+# default pick (Keero).  And one tap could jump two or three fighters, so each
+# step now waits a moment
+sub(r'oldsel1 =2 ;\n   oldsel2 =2 ;', 'oldsel1 = -1 ;\n   oldsel2 = -1 ;', expect=1)
+sub(r'p2_sel = 1 ; oldsel2 =2 ;', 'p2_sel = 1 ; oldsel2 = -1 ;', expect=1)
+sub(r'(\n\t+Bing\(\);)(\n\t+sel[12](?:--|\+\+) ;)', r'\1 rest(140) ;\2', expect=4)
+
+# Living stages (stagefx.c): animation layers behind the fighters are drawn
+# right after the background, layers marked "front" just before the
+# foreground picture; both are loaded with the stage
+sub(r'(void blit_Bkgd \(void\)\n\{.*?)\n\}\n', r'\1\n   web_stage_back(zoomscreen) ;\n}\n', count=1, flags=re.S, expect=1)
+sub(r'if \(foreground\)(\s*)masked_blit \( Frgd, zoomscreen ,', r'web_stage_front(zoomscreen) ;\n\tif (foreground)\1masked_blit ( Frgd, zoomscreen ,', expect=8)
+sub(r'(zoomscreen = create_bitmap\( Bkgd->w, Bkgd->h\) ;)', r'\1\n\tweb_stage_load(bkgdname[bgd]) ;', expect=1)
+
+# The tournament arena is the home stage: it's the first pick on the stage-select
+# screen and the first fight of a story run
+sub(r'\n   cx = 1 ;\n   bgd = 1 ;\n', '\n   cx = 1 ;\n   bgd = web_stage_index("arena.pcx") ;\n', expect=1)
 
 # Special-move inputs: the engine dropped a motion the moment any state not
 # in the sequence showed up (the neutral between back and forward, the
@@ -111,16 +179,37 @@ int web_find_char(const char *name, int fallback)
    for (i = 0 ; i < nbchar ; i++) if (!strcasecmp(charname[i], name)) return i ;
    return fallback ;
 }
+int web_stage_index(const char *want)
+{
+   int i ;
+   for (i = 0 ; i < nbbkgd ; i++) if (!strcasecmp(bkgdname[i], want)) return i ;
+   return 0 ;
+}
 int web_story_stage(int s)
 {
    static const char *home[][2] = {
-      {"onikage", "keep.pcx"}, {"frill", "village.pcx"}, {"yamana", "harbor.pcx"},
-      {"wanfu", "snowpass.pcx"}, {"shokei", "snowpass.pcx"}, {"keero", "harbor.pcx"}, {"corbin", "cfbk2.pcx"} } ;
-   const char *want = "snowpass.pcx" ;
+      {"onikage", "arena.pcx"}, {"frill", "forest.pcx"}, {"yamana", "temple.pcx"},
+      {"wanfu", "temple.pcx"}, {"shokei", "forest.pcx"}, {"keero", "arena.pcx"}, {"corbin", "cfbk2.pcx"} } ;
+   const char *want = "arena.pcx" ;
    int i ;
    for (i = 0 ; i < 7 ; i++) if (!strcasecmp(charname[s], home[i][0])) want = home[i][1] ;
+   if (gmode == 2) {                     /* nobody beaten yet: start at home */
+      int beaten = 0 ;
+      for (i = 0 ; i < nbchar ; i++) beaten |= defeated[i] ;
+      if (!beaten) want = "arena.pcx" ;
+   }
    for (i = 0 ; i < nbbkgd ; i++) if (!strcasecmp(bkgdname[i], want)) return i ;
    return 0 ;
+}
+/* test hook: lets the browser test harness read the fight state (main's locals) */
+int *web_dbgp[12] ;
+__attribute__((export_name("web_dbg"))) int web_dbg(int i)
+{
+   return (i >= 0 && i < 12 && web_dbgp[i]) ? *web_dbgp[i] : -1 ;
+}
+__attribute__((export_name("web_dbg_set"))) void web_dbg_set(int i, int v)
+{
+   if (i >= 0 && i < 12 && web_dbgp[i]) *web_dbgp[i] = v ;
 }
 void web_win_voice(int s)
 {

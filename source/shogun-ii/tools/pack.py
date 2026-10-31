@@ -12,7 +12,8 @@ for dp, dns, fns in os.walk(root):
     dns[:] = sorted(d for d in dns if d.lower() not in skip_dirs)
     for fn in sorted(fns):
         rel = os.path.relpath(os.path.join(dp, fn), root).replace(os.sep, '/')
-        if os.path.splitext(fn)[1].lower() not in keep or fn.lower() in skip_files: continue
+        fx_txt = rel.lower().startswith('bkgds/fx/') and fn.lower().endswith('.txt')  # living-stage layer lists
+        if (os.path.splitext(fn)[1].lower() not in keep and not fx_txt) or fn.lower() in skip_files: continue
         b = open(os.path.join(dp, fn), 'rb').read()
         files[rel] = [off, len(b)]; blobs.append(b); off += len(b)
 idx = json.dumps(files).encode()

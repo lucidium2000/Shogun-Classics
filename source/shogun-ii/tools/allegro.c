@@ -1070,3 +1070,6 @@ void web_mp3_close(void) { js_mp3_close(); }
 
 /* ------------------------------------------------------------------ */
 /* misc                                                                */
+
+/* lets stagefx.c read data files from the pack */
+unsigned char *web_read_file(const char *filename, int *size) { return read_file(filename, size); }
