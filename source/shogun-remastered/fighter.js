@@ -45,7 +45,7 @@ class Fighter {
     // long hair: heavy strands that fall down her back and only lift a little when she moves
     if (this.look.longHair) for (const [n, w, dx] of [[10, 22, 6], [9, 17, 12], [10, 14, 0]]) this.ropes.push({ r: new Rig.Rope(n, 11, w, this.look.longHair, 0.9), at: 'head', hair: dx });
     if (this.look.band) this.ropes.push({ r: new Rig.Rope(7, 9, 5, this.look.band), at: 'head' });
-    if (this.look.belt && this.look.gi && !this.look.rope) this.ropes.push({ r: new Rig.Rope(4, 8, 4, this.look.belt), at: 'belt' }, { r: new Rig.Rope(4, 9, 4, this.look.belt), at: 'belt' });
+    if (this.look.belt && this.look.gi && !this.look.rope && !this.look.noTail) this.ropes.push({ r: new Rig.Rope(4, 8, 4, this.look.belt), at: 'belt' }, { r: new Rig.Rope(4, 9, 4, this.look.belt), at: 'belt' });
     if (this.look.shadow) for (let i = 0; i < 4; i++) this.ropes.push({ r: new Rig.Rope(6, 12, 9 - i, 'rgba(10,14,26,0.9)'), at: 'belt' });
     this.trail = [];
   }
