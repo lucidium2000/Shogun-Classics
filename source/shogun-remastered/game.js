@@ -807,19 +807,29 @@ function startFatality(kind, att, def) {
     once('end', (this.bannerAt || 99) + 5.2, () => { G.fatal = null; G.pit = null; endMatch(att === G.p); });
   };
 }
+// a blade's crescent of light; face flips it so the swing always follows the attacker's facing
+function slashArc(x, y, r, a0, a1, face) {
+  if (face < 0) { a0 = Math.PI - a0; a1 = Math.PI - a1; }
+  FX.add({ kind: 'slash', x, y, size: r, a0, a1, life: 0.35, g: 0 });
+}
 function approach(f, x, dt, sp) { const d = x - f.x; if (Math.abs(d) > 4) { f.x += Math.sign(d) * Math.min(Math.abs(d), sp * dt); f.target = Math.sin(G.time * 9) > 0 ? 'walk1' : 'walk2'; f.speed = 10; return false; } return true; }
 
 function fatalHead(F, once, dt) {
   const a = F.att, d = F.def, t = F.t;
-  if (t < 0.7) { if (approach(a, d.x - a.face * 84, dt, 220)) { a.target = a.def.idle[0]; } }
-  once('wind', 0.75, () => { a.target = 'chargeS'; a.speed = 14; Audio.sfx('whoosh'); });
+  // Keero steps to sword range, draws the katana back high, then cuts flat through the neck
+  if (t < 0.7) { if (approach(a, d.x - a.face * 135, dt, 260)) { a.target = a.def.idle[0]; } }
+  once('wind', 0.72, () => { a.target = 'slashS'; a.speed = 10; Audio.sfx('whoosh'); });
+  once('swing', 1.08, () => { a.state = 'script'; a.target = 'slashH'; a.speed = 46; Audio.sfx('slash'); });
+  if (t > 1.08 && t < 1.2) a.x += a.face * 380 * dt;
   once('rip', 1.15, () => {
-    a.target = 'upperH'; a.speed = 40; Audio.sfx('crunch'); Audio.sfx('blood');
+    Audio.sfx('sliceHit'); Audio.sfx('crunch'); Audio.sfx('blood');
     const J = d.solve(); d.drawOpts = { noHead: true };
+    slashArc(a.x, J.N[1] + 10, 120, -0.9, 0.5, a.face);
     FX.gibs.push(new FX.Gib(J, 'head', J.Hd, a.face * 160, -1050, a.face * 9, { restOff: 14 }));
     FX.shake = 16; G.hitstop = 0.15; FX.flash = 0.35; FX.flashCol = '#900';
   });
   if (t > 1.15 && t < 3.0 && d.J) { const n = d.J.N; FX.bloodJet(n[0], n[1] - 4, -Math.PI / 2 + Math.sin(t * 8) * 0.3, 520, 2); }
+  once('hold', 1.5, () => { a.state = 'fatal'; });
   once('sag', 2.4, () => { d.target = 'kneel'; d.speed = 5; Audio.sfx('fall'); });
   once('drop', 3.1, () => { d.target = 'down'; d.speed = 7; d.freeRot = false; d.vx = -d.face * 260; Audio.sfx('fall'); FX.dust(d.x, GY, 12); });
   if (t > 3.1) d.pose.rot += (-88 - d.pose.rot) * Math.min(1, dt * 7);
@@ -836,8 +846,9 @@ function fatalPit(F, once, dt) {
     if (t > 1.1 && t < 1.8) { d.x += (a.x - d.x) * Math.min(1, dt * 8); d.y += (-190 - d.y) * Math.min(1, dt * 8); d.pose.rot += (-90 - d.pose.rot) * Math.min(1, dt * 8); }
     once('toss', 1.8, () => { Audio.sfx('whoosh'); d.state = 'launch'; d.grounded = false; d.vy = -1700; d.vx = a.face * 60; });
   } else {
-    once('crouch', 0.75, () => { a.target = a.def.upperP[0]; a.speed = 16; });
-    once('up', 1.05, () => { a.target = a.def.upperP[1]; a.speed = 40; Audio.sfx('heavy'); FX.blood(d.x, GY - 160, a.face, 1.5); FX.shake = 12; G.hitstop = 0.1; d.state = 'launch'; d.grounded = false; d.vy = -1800; d.vx = a.face * 40; d.freeRot = true; });
+    once('crouch', 0.72, () => { a.target = a.def.upperP[0]; a.speed = 14; Audio.sfx('whoosh'); });
+    once('up', 1.05, () => { a.state = 'script'; a.target = a.def.upperP[1]; a.speed = 44; a.x += a.face * 20; Audio.sfx('heavy');
+      slashArc(a.x + a.face * 40, GY - 150, 110, 1.3, -1.2, a.face); FX.blood(d.x, GY - 160, a.face, 1.5); FX.shake = 12; G.hitstop = 0.1; d.state = 'launch'; d.grounded = false; d.vy = -1800; d.vx = a.face * 40; d.freeRot = true; });
   }
   if (d.state === 'launch' && !G.pit) d.pose.rot -= dt * 500;
   once('cut', thrown ? 2.35 : 1.6, () => {
@@ -864,25 +875,25 @@ function fatalPit(F, once, dt) {
 function fatalRun(F, once, dt) {
   const a = F.att, d = F.def, t = F.t;
   if (t < 0.55) { if (approach(a, d.x - a.face * 150, dt, 260)) a.target = a.def.idle[0]; }
-  once('lunge', 0.6, () => { a.target = 'thrust'; a.speed = 30; Audio.sfx('dash'); });
+  once('lunge', 0.6, () => { a.state = 'script'; a.target = 'thrust'; a.speed = 30; Audio.sfx('dash'); });
   if (t > 0.6 && t < 0.78) a.x += a.face * 470 * dt;
   once('pierce', 0.78, () => {
     Audio.sfx('sliceHit'); Audio.sfx('blood'); d.target = 'hitLo'; d.speed = 20; G.hitstop = 0.18; FX.shake = 12;
     a.drawOpts = { bloodBlade: true };
   });
   if (t > 0.8 && t < 1.7 && d.J) FX.bloodJet(d.x + a.face * 26, GY - 140 * d.s, a.face > 0 ? -0.3 : Math.PI + 0.3, 380, 2);
-  once('pull', 1.7, () => { a.target = 'sIdle'; a.speed = 8; d.target = 'hitHi'; d.speed = 8; Audio.sfx('slash'); });
+  once('pull', 1.7, () => { a.state = 'fatal'; a.target = 'sIdle'; a.speed = 8; d.target = 'hitHi'; d.speed = 8; Audio.sfx('slash'); });
   if (t > 1.7 && t < 2.1) a.x -= a.face * 220 * dt;
-  once('raise', 2.15, () => { a.target = 'cleaveS'; a.speed = 14; });
+  once('raise', 2.15, () => { a.target = 'cleaveS'; a.speed = 12; Audio.sfx('whoosh'); });
   once('cleave', 2.55, () => {
-    a.target = 'cleaveH'; a.speed = 40; Audio.sfx('slash'); Audio.sfx('crunch'); Audio.sfx('blood');
+    a.state = 'script'; a.target = 'cleaveH'; a.speed = 46; slashArc(a.x, GY - 200, 150, -1.9, 0.4, a.face); Audio.sfx('slash'); Audio.sfx('crunch'); Audio.sfx('blood');
     const J = d.solve(); d.drawOpts = { only: 'lower' };
     FX.gibs.push(new FX.Gib(J, 'upper', J.H, a.face * 210, -620, a.face * 3.2, { restOff: 34, rim: G.stage.rim, light: G.stage.light }));
     FX.shake = 18; G.hitstop = 0.16; FX.flash = 0.4; FX.flashCol = '#900';
   });
   if (t > 2.55 && t < 4 && d.J) FX.bloodJet(d.J.H[0], d.J.H[1] - 6, -Math.PI / 2 + Math.sin(t * 9) * 0.35, 460, 2);
   once('legs', 3.2, () => { d.target = 'kneel'; d.speed = 5; Audio.sfx('fall'); });
-  once('vict', 3.5, () => { a.target = 'sVictory'; a.speed = 5; });
+  once('vict', 3.5, () => { a.state = 'fatal'; a.target = 'sVictory'; a.speed = 5; });
   F.bannerAt = 3.6;
 }
 

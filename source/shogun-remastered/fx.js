@@ -64,6 +64,15 @@ const FX = (() => {
       if (p.kind === 'blood') { ctx.fillStyle = p.col; ctx.beginPath(); ctx.ellipse(p.x, p.y, p.size, p.size * 0.8, Math.atan2(p.vy, p.vx), 0, 7); ctx.fill(); }
       else if (p.kind === 'spark') { ctx.strokeStyle = p.col; ctx.globalAlpha = k; ctx.lineWidth = p.size; ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x - p.vx * 0.03, p.y - p.vy * 0.03); ctx.stroke(); ctx.globalAlpha = 1; }
       else if (p.kind === 'smoke') { ctx.fillStyle = p.col; ctx.globalAlpha = k; ctx.beginPath(); ctx.arc(p.x, p.y, p.size * (1.5 - k * 0.5), 0, 7); ctx.fill(); ctx.globalAlpha = 1; }
+      else if (p.kind === 'slash') {
+        // a crescent of steel light where a blade just passed: a0 to a1 around (x, y)
+        ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.lineCap = 'round';
+        const r = p.size * (1 + (1 - k) * 0.12), end = p.a0 + (p.a1 - p.a0) * Math.min(1, (1 - k) * 5);
+        for (const [w, c] of [[26 * k + 4, 'rgba(160,190,255,0.35)'], [9 * k + 2, 'rgba(255,255,255,0.95)']]) {
+          ctx.strokeStyle = c; ctx.lineWidth = w; ctx.beginPath(); ctx.arc(p.x, p.y, r, p.a0, end, p.a1 < p.a0); ctx.stroke();
+        }
+        ctx.restore();
+      }
       else if (p.kind === 'ring') { ctx.strokeStyle = p.col; ctx.globalAlpha = k; ctx.lineWidth = 4 * k + 1; ctx.beginPath(); ctx.arc(p.x, p.y, p.size * (1.4 - k), 0, 7); ctx.stroke(); ctx.globalAlpha = 1; }
       else { ctx.fillStyle = p.col; ctx.fillRect(p.x - p.size / 2, p.y - p.size / 2, p.size, p.size); }
     }
