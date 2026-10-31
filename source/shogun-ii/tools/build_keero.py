@@ -183,6 +183,11 @@ def opaque(can):
 # photo numbers per move, chosen from the 2004 moves list
 # (low kick/jump kick, crouch kick, crouch/jump punch, hurt, fall, intro, win,
 #  fireball, punch, kick, fatal kick)
+# 2026-10-31: re-grouped by shooting order (Chris: the photos were taken in
+# series, so each move's photos sit together): 1-3 jump kick, 4-7 low kick,
+# 8-11 crouch kick, 12-14 crouch/jump punch, 15-16 hurt, 17-22 fall,
+# 23-33 intro (34-35, bent over a box, left out), 36-42 win, 43-45 fireball, 46-47 punch,
+# 48-51 strong kick, 52-55 Fatal Kick, 59-63 uppercut
 MOVES = {
     # fighting stance is the side-on guard (45); the "b"/"c" variants are the
     # same photo squashed a pixel or two so the stance breathes
@@ -196,22 +201,22 @@ MOVES = {
     'ghurt':  [13, 14],
     'ko':     [17, 18, 19, 21, 22],
     # walks in, squares up, drops into the side-on guard
-    'intro':  [56, 56, 37, 37, 38, 38, 36, 36, 47, 47, 4, 4, '45', '45', '45'],
+    'intro':  [23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 33, '45', '45', '45'],
     # the front-facing poses are his victory celebration
-    'outwin': [24, 25, 26, 25, 24, 39, 40, 41, 42, 41, 42],
-    'wpunch': [1, 3, 3, 1],
-    'spunch': [43, 44, 45, 46, 44],
-    'wkick':  [4, 5, 6, 7, 5],
+    'outwin': [36, 37, 38, 39, 40, 41, 42, 41, 42, 41, 42],
+    'wpunch': [47, 46, 46, 47],
+    'spunch': ['45', 47, 46, 46, 47],
+    'wkick':  [4, 5, 5, 6, 7],
     'skick':  [48, 49, 50, 51, 49],
     'gpunch': [12, 13, 14, 13, 12],
     'gkick':  [8, 9, 10, 11, 11, 10, 9, 8],
     'apunch': [12, 13, 14, 13],
-    'akick':  [5, 6, 7, 6, 5],
+    'akick':  [1, 2, 3, 3, 2],
     # plain fireball: hands gather at the hip, then push out
-    'fireb':  [57, 59, 59, 46, 46, 3],
+    'fireb':  [43, 44, 44, 45, 45, 43],
     'smove':  [52, 53, 54, 55, 55, 54, 53, 52],
     # dragon punch (engine "rush" slot): dip low, then the 60-63 uppercut
-    'rush':   [12, 60, 61, 62, 63, 63],
+    'rush':   [59, 60, 61, 62, 63, 63],
 }
 FILE = {'static': 'static', 'walk': 'walk', 'jump': 'jump', 'crouch': 'crouch', 'block': 'block',
         'gblock': 'gblock', 'hurt': 'hurt', 'ghurt': 'ghurt', 'ko': 'ko', 'intro': 'intro',

@@ -199,3 +199,73 @@ __attribute__((export_name("web_fx"))) int web_fx(int i)
 {
    return i == 0 ? nfx : i == 1 ? tick : i == 2 ? (nfx ? fx[0].n : -1) : 0;
 }
+
+/* ---- fighter names under the life bars ---------------------------------- */
+#include "namefont.h"
+static char nm1[40], nm2[40];
+
+static void read_name(const char *cid, char *out)
+{
+   char p[260], *t, *l;
+   int size;
+   snprintf(p, sizeof(p), "sprites/%s/char.ini", cid);
+   strcpy(out, cid);
+   t = (char *)web_read_file(p, &size);
+   if (!t) return;
+   t[size] = 0;
+   for (l = t; l && *l; l = strchr(l, '\n') ? strchr(l, '\n') + 1 : NULL) {
+      char *e, *s;
+      while (*l == ' ' || *l == '\t') l++;
+      if (strncmp(l, "name", 4) || (l[4] != ' ' && l[4] != '=' && l[4] != '\t')) continue;
+      if (!(e = strchr(l, '='))) continue;
+      s = e + 1;
+      while (*s == ' ' || *s == '\t') s++;
+      { int n = 0; while (s[n] && s[n] != '\r' && s[n] != '\n' && n < 39) n++; memcpy(out, s, n); out[n] = 0; }
+      /* "TEST CHARACTER(CORBIN)" -> "CORBIN" */
+      if ((s = strchr(out, '(')) && (e = strchr(s, ')'))) { *e = 0; memmove(out, s + 1, strlen(s + 1) + 1); }
+      break;
+   }
+   free(t);
+}
+
+void web_names(const char *c1, const char *c2) { read_name(c1, nm1); read_name(c2, nm2); }
+
+static int nf_len(const char *s)
+{
+   int w = 0;
+   for (; *s; s++) { int c = (unsigned char)*s; if (c < 32 || c > 126) c = 32; w += nf_w[c - 32] + 1; }
+   return w;
+}
+
+static void nf_put(BITMAP *b, const char *s, int x, int y, int col)
+{
+   for (; *s; s++) {
+      int c = (unsigned char)*s, gx, gy;
+      if (c < 32 || c > 126) c = 32;
+      for (gy = 0; gy < NF_H; gy++) {
+         unsigned m = nf_rows[c - 32][gy];
+         for (gx = 0; m; gx++, m >>= 1)
+            if (m & 1) {
+               int px = x + gx, py = y + gy;
+               if (px >= 0 && py >= 0 && px < b->w && py < b->h) ((uint16_t *)b->dat)[py * b->w + px] = (uint16_t)col;
+            }
+      }
+      x += nf_w[c - 32] + 1;
+   }
+}
+
+static void nf_draw(BITMAP *b, const char *s, int x, int y)
+{
+   static const int o[8][2] = {{-1,0},{1,0},{0,-1},{0,1},{-1,-1},{1,-1},{-1,1},{1,1}};
+   int i;
+   for (i = 0; i < 8; i++) nf_put(b, s, x + o[i][0], y + o[i][1], 0x0000);
+   nf_put(b, s, x + 1, y + 1, 0x0000);
+   nf_put(b, s, x, y, 0xFF9A);          /* warm cream, like the title lettering */
+}
+
+void web_draw_names(BITMAP *b)
+{
+   if (!b || b->depth != 16) return;
+   nf_draw(b, nm1, 30, 21);
+   nf_draw(b, nm2, 291 - nf_len(nm2), 21);
+}

@@ -33,7 +33,7 @@ sub(r'\nmain\(\)\n', '\nint main(void)\n', expect=1)
 sub(r'while\s*\(\s*!retrace_count\s*\)\s*;;?', 'while (retrace_count <= 0) al_wait_retrace();')
 
 # exit() should stop the game cleanly in the page
-src = src.replace('#include "allegro.h"\n', '#include "allegro.h"\nvoid exit_hook(int);\n#define exit(c) exit_hook(c)\nvoid web_music(const char *);\nvoid web_music_stop(void);\nint web_find_char(const char *, int);\nvoid web_win_voice(int);\nint web_story_stage(int);\nint web_stage_index(const char *);\nextern int *web_dbgp[12];\nvoid web_stage_load(const char *);\nvoid web_stage_back(BITMAP *);\nvoid web_stage_front(BITMAP *);\n', 1)
+src = src.replace('#include "allegro.h"\n', '#include "allegro.h"\nvoid exit_hook(int);\n#define exit(c) exit_hook(c)\nvoid web_music(const char *);\nvoid web_music_stop(void);\nint web_find_char(const char *, int);\nvoid web_win_voice(int);\nint web_story_stage(int);\nint web_stage_index(const char *);\nextern int *web_dbgp[12];\nvoid web_stage_load(const char *);\nvoid web_stage_back(BITMAP *);\nvoid web_stage_front(BITMAP *);\nvoid web_names(const char *, const char *);\nvoid web_draw_names(BITMAP *);\n', 1)
 
 # ---- Shogun II restoration changes ------------------------------------
 # Title music: the Shogun song plays from the intro through the main menus,
@@ -133,6 +133,11 @@ sub(r'(\n\t+Bing\(\);)(\n\t+sel[12](?:--|\+\+) ;)', r'\1 rest(140) ;\2', expect=
 sub(r'(void blit_Bkgd \(void\)\n\{.*?)\n\}\n', r'\1\n   web_stage_back(zoomscreen) ;\n}\n', count=1, flags=re.S, expect=1)
 sub(r'if \(foreground\)(\s*)masked_blit \( Frgd, zoomscreen ,', r'web_stage_front(zoomscreen) ;\n\tif (foreground)\1masked_blit ( Frgd, zoomscreen ,', expect=8)
 sub(r'(zoomscreen = create_bitmap\( Bkgd->w, Bkgd->h\) ;)', r'\1\n\tweb_stage_load(bkgdname[bgd]) ;', expect=1)
+
+# Fighter names under the life bars (the engine never drew them): read from
+# each fighter's char.ini when the fight loads, drawn with a small pixel font
+sub(r'(\n\tweb_stage_load\(bkgdname\[bgd\]\) ;)', r'\1\n\tweb_names(charname[sel1], charname[sel2]) ;', expect=1)
+sub(r'(\n   blit \( PBar, virtscreen, 0, 0, 312-spower2, 190,spower2, 6 \) ;\n)', r'\1\n   web_draw_names(virtscreen) ;\n', expect=1)
 
 # The tournament arena is the home stage: it's the first pick on the stage-select
 # screen and the first fight of a story run

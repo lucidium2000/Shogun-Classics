@@ -19,7 +19,7 @@ W, HH, OX, OY = 560, 320, 260, 300
 FILES = {'shokei': ('01', '06'), 'wanfu': ('02', '07'), 'yamana': ('03', '08'),
          'frill': ('04', '09'), 'onikage': ('05', '10')}
 # standing height of each fighter in game pixels (Keero is 140)
-HEIGHT = {'shokei': 138, 'wanfu': 146, 'yamana': 136, 'frill': 138, 'onikage': 143}
+HEIGHT = {'shokei': 138, 'wanfu': 146, 'yamana': 136, 'frill': 152, 'onikage': 143}
 
 
 def cutout(path):
@@ -44,6 +44,12 @@ def place(img, k, tx):
     can = np.zeros((HH, W, 4), np.float32)
     x = int(round(tx - torso_x(a)))
     y = OY + 1 - a.shape[0]
+    if SOLE:
+        # stand on the real feet: the image may have empty rows under them,
+        # and hanging ribbons must not count as feet
+        sb = sole(a[..., 3] > 128)
+        a = a[:min(a.shape[0], sb + 1 + (HH - OY - 2))]
+        y = OY + 1 - (sb + 1)
     can[y:y + a.shape[0], x:x + a.shape[1]] = a
     return can
 
@@ -65,9 +71,21 @@ def bbox(can):
     return xs.min(), ys.min(), xs.max(), ys.max()
 
 
+SOLE = False
+
+
+def sole(op):
+    """lowest row of the solid body (thin ribbons and wisps opened away)"""
+    body = ndimage.binary_opening(op, np.ones((4, 4), bool))
+    ys = np.nonzero((body if body.any() else op).any(1))[0]
+    return int(ys.max())
+
+
 def floor(can):
     """drop the figure so its lowest pixel stands on the floor"""
     _, _, _, y1 = bbox(can)
+    if SOLE:
+        y1 = sole(can[..., 3] > 128)
     return np.roll(can, OY + 1 - y1, axis=0) if y1 != OY + 1 else can
 
 
@@ -240,8 +258,9 @@ def tint(can, rgb, amt):
 
 
 def build(cid):
-    global STAFF
+    global STAFF, SOLE
     STAFF = cid == 'yamana'
+    SOLE = cid == 'frill'
     s_id, k_id = FILES[cid]
     S0 = cutout(glob.glob(f'{CUT}/{s_id}_*.png')[0])
     K0 = cutout(glob.glob(f'{CUT}/{k_id}_*.png')[0])
