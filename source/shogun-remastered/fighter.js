@@ -42,6 +42,8 @@ class Fighter {
     this.digits = []; this.punchAlt = 0; this.buffer = null; this.think = 0.6; this.punchCount = 0;
     this.ropes = [];
     if (this.look.hoodTail) this.ropes.push({ r: new Rig.Rope(4, 7, 11, this.look.hoodTail), at: 'head' });
+    // long hair: heavy strands that fall down her back and only lift a little when she moves
+    if (this.look.longHair) for (const [n, w, dx] of [[10, 22, 6], [9, 17, 12], [10, 14, 0]]) this.ropes.push({ r: new Rig.Rope(n, 11, w, this.look.longHair, 0.9), at: 'head', hair: dx });
     if (this.look.band) this.ropes.push({ r: new Rig.Rope(7, 9, 5, this.look.band), at: 'head' });
     if (this.look.belt && this.look.gi && !this.look.rope) this.ropes.push({ r: new Rig.Rope(4, 8, 4, this.look.belt), at: 'belt' }, { r: new Rig.Rope(4, 9, 4, this.look.belt), at: 'belt' });
     if (this.look.shadow) for (let i = 0; i < 4; i++) this.ropes.push({ r: new Rig.Rope(6, 12, 9 - i, 'rgba(10,14,26,0.9)'), at: 'belt' });
@@ -225,11 +227,20 @@ class Fighter {
     const sh = Math.max(0.3, 1 + this.y / 300);
     if (!(Retro.active && Retro.mode === 'blocks')) { ctx.fillStyle = stage.shadow; ctx.beginPath(); ctx.ellipse(this.x, Stages.GROUND + 3, 62 * this.s * sh, 9 * sh, 0, 0, 7); ctx.fill(); }
     for (const R of this.ropes) {
-      const a = R.at === 'head' ? Rig.headAnchor(J) : Rig.beltAnchor(J);
-      R.r.update(a, dt, -this.face * 0.9 + (stage.wind || 0) - this.vx / 400, this.face);
+      let a = R.at === 'head' ? Rig.headAnchor(J) : Rig.beltAnchor(J);
+      const wind = -this.face * 0.9 + (stage.wind || 0) - this.vx / 400;
+      if (R.hair !== undefined) { a = [a[0] - this.face * R.hair, a[1] + 4]; R.r.update(a, dt, wind * 0.75, this.face); }
+      else R.r.update(a, dt, wind, this.face);
     }
     if (opts.noHead) for (const R of this.ropes) if (R.at === 'head') R.r.reset();
-    for (const R of this.ropes) if (R.at !== 'head' || !opts.noHead) if (R.at === 'belt' && !this.look.shadow) {} else R.r.draw(ctx);
+    for (const R of this.ropes) if (R.at !== 'head' || !opts.noHead) if (R.at === 'belt' && !this.look.shadow) {} else if (R.hair !== undefined) {
+      // her hair picks up the same cold glow as the rest of her, so it reads against the night
+      const P = R.r.p; if (!P) continue;
+      ctx.save(); ctx.shadowColor = 'rgba(130,200,255,0.75)'; ctx.shadowBlur = 12; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+      ctx.strokeStyle = R.r.col; ctx.lineWidth = R.r.w0; ctx.beginPath(); ctx.moveTo(P[0].x, P[0].y);
+      for (let i = 1; i < P.length - 1; i++) ctx.quadraticCurveTo(P[i].x, P[i].y, (P[i].x + P[i + 1].x) / 2, (P[i].y + P[i + 1].y) / 2);
+      ctx.lineTo(P[P.length - 1].x, P[P.length - 1].y); ctx.stroke(); ctx.restore();
+    } else R.r.draw(ctx);
     if (this.look.shadow) {
       ctx.save(); ctx.shadowColor = 'rgba(130,200,255,0.9)'; ctx.shadowBlur = 22 + 8 * Math.sin(performance.now() / 200);
       Rig.draw(ctx, J, opts); ctx.restore();

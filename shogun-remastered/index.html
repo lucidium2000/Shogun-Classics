@@ -604,7 +604,8 @@ const Rig = (() => {
     },
     frill: {
       name: 'FRILL', s: 1.05, skin: '#0b0e16', gi: '#0d1120', pants: '#0a0d18', sleeve: 'full', fore: '#0d1120', hand: '#1a2236',
-      belt: '#1d2a44', band: null, hair: '#05070c', hairStyle: 'hood', eyes: '#d9f3ff', shadow: true,
+      // a woman (Chris, 2026-10-31): long black hair streaming behind her, face in shadow, glowing eyes
+      belt: '#1d2a44', band: null, hair: '#05070c', hairStyle: 'long', longHair: '#1c2850', eyes: '#d9f3ff', shadow: true,
       shW: 44, waist: 30, limb: 0.95, weapon: null, rimCol: '#9fdcff',
     },
   };
@@ -948,13 +949,25 @@ const Rig = (() => {
       ctx.fillStyle = '#0a0606'; ctx.beginPath(); ctx.ellipse((m0[0] + m1[0]) / 2, (m0[1] + m1[1]) / 2, r * 0.4, r * 0.14, a, 0, 7); ctx.fill();
       ctx.fillStyle = '#e9dcb4';
       for (const f of [0.08, 0.58]) { const t0 = P(f, -0.48), t1 = P(f + 0.06, -0.72), t2 = P(f + 0.13, -0.48); ctx.beginPath(); ctx.moveTo(t0[0], t0[1]); ctx.lineTo(t1[0], t1[1]); ctx.lineTo(t2[0], t2[1]); ctx.closePath(); ctx.fill(); }
+    } else if (L.hairStyle === 'long') {
+      // long hair: a full mass at the back of the skull, the face set forward, bangs swept over the brow
+      ctx.fillStyle = L.longHair; ctx.beginPath(); ctx.ellipse(hx - fx * r * 0.35, hy - fy * r * 0.35 + 2, r * 1.2, r * 1.25, a, 0, 7); ctx.fill();
+      ctx.fillStyle = L.skin; ctx.beginPath(); ctx.ellipse(hx + fx * r * 0.28, hy + fy * r * 0.28 + 1, r * 0.72, r * 0.9, a, 0, 7); ctx.fill();
+      ctx.fillStyle = L.longHair; ctx.beginPath();
+      for (let th = -160; th <= 70; th += 10) { const q = at(th, r * 1.12); th === -160 ? ctx.moveTo(q[0], q[1]) : ctx.lineTo(q[0], q[1]); }
+      const bg = at(55, r * 0.55), bb = at(-60, r * 0.6); ctx.quadraticCurveTo(bg[0], bg[1], bb[0], bb[1]); ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = 'rgba(140,190,255,0.35)'; ctx.lineWidth = 1.6; ctx.beginPath();   // a cold sheen on the crown
+      for (let th = -120; th <= 20; th += 10) { const q = at(th, r * 1.02); th === -120 ? ctx.moveTo(q[0], q[1]) : ctx.lineTo(q[0], q[1]); } ctx.stroke();
+      ctx.shadowColor = L.eyes; ctx.shadowBlur = 14; ctx.fillStyle = L.eyes;
+      for (const k of [0.45, 0.85]) { ctx.beginPath(); ctx.ellipse(hx + fx * r * k + ux * r * 0.05, hy + fy * r * k + uy * r * 0.05, 2.4, 1.3, a, 0, 7); ctx.fill(); }
+      ctx.shadowBlur = 0;
     } else if (L.hairStyle === 'hood') {
       ctx.fillStyle = L.hair; ctx.beginPath(); ctx.arc(hx - fx * 2, hy - 2, r * 1.15, 0, 7); ctx.fill();
       ctx.fillStyle = '#000'; ctx.beginPath(); ctx.arc(hx + fx * 4, hy + fy * 4, r * 0.7, 0, 7); ctx.fill();
       ctx.shadowColor = L.eyes; ctx.shadowBlur = 14; ctx.fillStyle = L.eyes;
       for (const k of [0.35, 0.8]) { ctx.beginPath(); ctx.ellipse(hx + fx * r * k + ux * 2, hy + fy * r * k + uy * 2, 2.6, 1.6, a, 0, 7); ctx.fill(); }
       ctx.shadowBlur = 0;
-    } else if (L.hairStyle !== 'hood') {
+    } else if (L.hairStyle !== 'hood' && L.hairStyle !== 'long') {
       if (L.hairStyle === 'hood2') { ctx.fillStyle = '#120c0a'; const ex = hx + fx * r * 0.72 + ux * r * 0.12, ey = hy + fy * r * 0.72 + uy * r * 0.12; ctx.beginPath(); ctx.ellipse(ex, ey, 2.4 * s, 1.5 * s, a, 0, 7); ctx.fill(); }
       else {
       // a single eye line and brow gives the face direction
@@ -1013,7 +1026,7 @@ const Rig = (() => {
 
   /* ---------------------------------------------------- ribbons/ropes */
   R.Rope = class {
-    constructor(n, seg, w0, col) { this.n = n; this.seg = seg; this.w0 = w0; this.col = col; this.p = null; }
+    constructor(n, seg, w0, col, g) { this.n = n; this.seg = seg; this.w0 = w0; this.col = col; this.g = g || 0.28; this.p = null; }
     update(anchor, dt, wind, face) {
       if (!this.p) { this.p = []; for (let i = 0; i < this.n; i++) this.p.push({ x: anchor[0] - face * i * this.seg, y: anchor[1] + i * 2, px: anchor[0] - face * i * this.seg, py: anchor[1] + i * 2 }); }
       const P = this.p; P[0].x = anchor[0]; P[0].y = anchor[1]; P[0].px = anchor[0]; P[0].py = anchor[1];
@@ -1022,7 +1035,7 @@ const Rig = (() => {
         const q = P[i], vx = (q.x - q.px) * 0.9, vy = (q.y - q.py) * 0.9;
         q.px = q.x; q.py = q.y;
         q.x += vx + (wind + Math.sin(t * 6 + i) * 0.3) * dt * 60 * 0.35;
-        q.y += vy + 0.28 * dt * 60;
+        q.y += vy + this.g * dt * 60;
       }
       for (let k = 0; k < 3; k++) for (let i = 1; i < P.length; i++) {
         const a = P[i - 1], b = P[i], dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy) || 1, e = (d - this.seg) / d;
@@ -1726,6 +1739,8 @@ class Fighter {
     this.digits = []; this.punchAlt = 0; this.buffer = null; this.think = 0.6; this.punchCount = 0;
     this.ropes = [];
     if (this.look.hoodTail) this.ropes.push({ r: new Rig.Rope(4, 7, 11, this.look.hoodTail), at: 'head' });
+    // long hair: heavy strands that fall down her back and only lift a little when she moves
+    if (this.look.longHair) for (const [n, w, dx] of [[10, 22, 6], [9, 17, 12], [10, 14, 0]]) this.ropes.push({ r: new Rig.Rope(n, 11, w, this.look.longHair, 0.9), at: 'head', hair: dx });
     if (this.look.band) this.ropes.push({ r: new Rig.Rope(7, 9, 5, this.look.band), at: 'head' });
     if (this.look.belt && this.look.gi && !this.look.rope) this.ropes.push({ r: new Rig.Rope(4, 8, 4, this.look.belt), at: 'belt' }, { r: new Rig.Rope(4, 9, 4, this.look.belt), at: 'belt' });
     if (this.look.shadow) for (let i = 0; i < 4; i++) this.ropes.push({ r: new Rig.Rope(6, 12, 9 - i, 'rgba(10,14,26,0.9)'), at: 'belt' });
@@ -1909,11 +1924,20 @@ class Fighter {
     const sh = Math.max(0.3, 1 + this.y / 300);
     if (!(Retro.active && Retro.mode === 'blocks')) { ctx.fillStyle = stage.shadow; ctx.beginPath(); ctx.ellipse(this.x, Stages.GROUND + 3, 62 * this.s * sh, 9 * sh, 0, 0, 7); ctx.fill(); }
     for (const R of this.ropes) {
-      const a = R.at === 'head' ? Rig.headAnchor(J) : Rig.beltAnchor(J);
-      R.r.update(a, dt, -this.face * 0.9 + (stage.wind || 0) - this.vx / 400, this.face);
+      let a = R.at === 'head' ? Rig.headAnchor(J) : Rig.beltAnchor(J);
+      const wind = -this.face * 0.9 + (stage.wind || 0) - this.vx / 400;
+      if (R.hair !== undefined) { a = [a[0] - this.face * R.hair, a[1] + 4]; R.r.update(a, dt, wind * 0.75, this.face); }
+      else R.r.update(a, dt, wind, this.face);
     }
     if (opts.noHead) for (const R of this.ropes) if (R.at === 'head') R.r.reset();
-    for (const R of this.ropes) if (R.at !== 'head' || !opts.noHead) if (R.at === 'belt' && !this.look.shadow) {} else R.r.draw(ctx);
+    for (const R of this.ropes) if (R.at !== 'head' || !opts.noHead) if (R.at === 'belt' && !this.look.shadow) {} else if (R.hair !== undefined) {
+      // her hair picks up the same cold glow as the rest of her, so it reads against the night
+      const P = R.r.p; if (!P) continue;
+      ctx.save(); ctx.shadowColor = 'rgba(130,200,255,0.75)'; ctx.shadowBlur = 12; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+      ctx.strokeStyle = R.r.col; ctx.lineWidth = R.r.w0; ctx.beginPath(); ctx.moveTo(P[0].x, P[0].y);
+      for (let i = 1; i < P.length - 1; i++) ctx.quadraticCurveTo(P[i].x, P[i].y, (P[i].x + P[i + 1].x) / 2, (P[i].y + P[i + 1].y) / 2);
+      ctx.lineTo(P[P.length - 1].x, P[P.length - 1].y); ctx.stroke(); ctx.restore();
+    } else R.r.draw(ctx);
     if (this.look.shadow) {
       ctx.save(); ctx.shadowColor = 'rgba(130,200,255,0.9)'; ctx.shadowBlur = 22 + 8 * Math.sin(performance.now() / 200);
       Rig.draw(ctx, J, opts); ctx.restore();

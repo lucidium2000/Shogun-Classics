@@ -114,7 +114,8 @@ const Rig = (() => {
     },
     frill: {
       name: 'FRILL', s: 1.05, skin: '#0b0e16', gi: '#0d1120', pants: '#0a0d18', sleeve: 'full', fore: '#0d1120', hand: '#1a2236',
-      belt: '#1d2a44', band: null, hair: '#05070c', hairStyle: 'hood', eyes: '#d9f3ff', shadow: true,
+      // a woman (Chris, 2026-10-31): long black hair streaming behind her, face in shadow, glowing eyes
+      belt: '#1d2a44', band: null, hair: '#05070c', hairStyle: 'long', longHair: '#1c2850', eyes: '#d9f3ff', shadow: true,
       shW: 44, waist: 30, limb: 0.95, weapon: null, rimCol: '#9fdcff',
     },
   };
@@ -458,13 +459,25 @@ const Rig = (() => {
       ctx.fillStyle = '#0a0606'; ctx.beginPath(); ctx.ellipse((m0[0] + m1[0]) / 2, (m0[1] + m1[1]) / 2, r * 0.4, r * 0.14, a, 0, 7); ctx.fill();
       ctx.fillStyle = '#e9dcb4';
       for (const f of [0.08, 0.58]) { const t0 = P(f, -0.48), t1 = P(f + 0.06, -0.72), t2 = P(f + 0.13, -0.48); ctx.beginPath(); ctx.moveTo(t0[0], t0[1]); ctx.lineTo(t1[0], t1[1]); ctx.lineTo(t2[0], t2[1]); ctx.closePath(); ctx.fill(); }
+    } else if (L.hairStyle === 'long') {
+      // long hair: a full mass at the back of the skull, the face set forward, bangs swept over the brow
+      ctx.fillStyle = L.longHair; ctx.beginPath(); ctx.ellipse(hx - fx * r * 0.35, hy - fy * r * 0.35 + 2, r * 1.2, r * 1.25, a, 0, 7); ctx.fill();
+      ctx.fillStyle = L.skin; ctx.beginPath(); ctx.ellipse(hx + fx * r * 0.28, hy + fy * r * 0.28 + 1, r * 0.72, r * 0.9, a, 0, 7); ctx.fill();
+      ctx.fillStyle = L.longHair; ctx.beginPath();
+      for (let th = -160; th <= 70; th += 10) { const q = at(th, r * 1.12); th === -160 ? ctx.moveTo(q[0], q[1]) : ctx.lineTo(q[0], q[1]); }
+      const bg = at(55, r * 0.55), bb = at(-60, r * 0.6); ctx.quadraticCurveTo(bg[0], bg[1], bb[0], bb[1]); ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = 'rgba(140,190,255,0.35)'; ctx.lineWidth = 1.6; ctx.beginPath();   // a cold sheen on the crown
+      for (let th = -120; th <= 20; th += 10) { const q = at(th, r * 1.02); th === -120 ? ctx.moveTo(q[0], q[1]) : ctx.lineTo(q[0], q[1]); } ctx.stroke();
+      ctx.shadowColor = L.eyes; ctx.shadowBlur = 14; ctx.fillStyle = L.eyes;
+      for (const k of [0.45, 0.85]) { ctx.beginPath(); ctx.ellipse(hx + fx * r * k + ux * r * 0.05, hy + fy * r * k + uy * r * 0.05, 2.4, 1.3, a, 0, 7); ctx.fill(); }
+      ctx.shadowBlur = 0;
     } else if (L.hairStyle === 'hood') {
       ctx.fillStyle = L.hair; ctx.beginPath(); ctx.arc(hx - fx * 2, hy - 2, r * 1.15, 0, 7); ctx.fill();
       ctx.fillStyle = '#000'; ctx.beginPath(); ctx.arc(hx + fx * 4, hy + fy * 4, r * 0.7, 0, 7); ctx.fill();
       ctx.shadowColor = L.eyes; ctx.shadowBlur = 14; ctx.fillStyle = L.eyes;
       for (const k of [0.35, 0.8]) { ctx.beginPath(); ctx.ellipse(hx + fx * r * k + ux * 2, hy + fy * r * k + uy * 2, 2.6, 1.6, a, 0, 7); ctx.fill(); }
       ctx.shadowBlur = 0;
-    } else if (L.hairStyle !== 'hood') {
+    } else if (L.hairStyle !== 'hood' && L.hairStyle !== 'long') {
       if (L.hairStyle === 'hood2') { ctx.fillStyle = '#120c0a'; const ex = hx + fx * r * 0.72 + ux * r * 0.12, ey = hy + fy * r * 0.72 + uy * r * 0.12; ctx.beginPath(); ctx.ellipse(ex, ey, 2.4 * s, 1.5 * s, a, 0, 7); ctx.fill(); }
       else {
       // a single eye line and brow gives the face direction
@@ -523,7 +536,7 @@ const Rig = (() => {
 
   /* ---------------------------------------------------- ribbons/ropes */
   R.Rope = class {
-    constructor(n, seg, w0, col) { this.n = n; this.seg = seg; this.w0 = w0; this.col = col; this.p = null; }
+    constructor(n, seg, w0, col, g) { this.n = n; this.seg = seg; this.w0 = w0; this.col = col; this.g = g || 0.28; this.p = null; }
     update(anchor, dt, wind, face) {
       if (!this.p) { this.p = []; for (let i = 0; i < this.n; i++) this.p.push({ x: anchor[0] - face * i * this.seg, y: anchor[1] + i * 2, px: anchor[0] - face * i * this.seg, py: anchor[1] + i * 2 }); }
       const P = this.p; P[0].x = anchor[0]; P[0].y = anchor[1]; P[0].px = anchor[0]; P[0].py = anchor[1];
@@ -532,7 +545,7 @@ const Rig = (() => {
         const q = P[i], vx = (q.x - q.px) * 0.9, vy = (q.y - q.py) * 0.9;
         q.px = q.x; q.py = q.y;
         q.x += vx + (wind + Math.sin(t * 6 + i) * 0.3) * dt * 60 * 0.35;
-        q.y += vy + 0.28 * dt * 60;
+        q.y += vy + this.g * dt * 60;
       }
       for (let k = 0; k < 3; k++) for (let i = 1; i < P.length; i++) {
         const a = P[i - 1], b = P[i], dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy) || 1, e = (d - this.seg) / d;
