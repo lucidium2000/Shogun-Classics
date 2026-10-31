@@ -76,7 +76,9 @@ const Input = (() => {
       const st = { l: B(14) || ax < -0.5, r: B(15) || ax > 0.5, u: B(12) || ay < -0.5, d: B(13) || ay > 0.5, p: B(0) || B(2), sp: B(1) || B(3) };
       const prev = gpPrev[gp.index] || {};
       for (const b in st) { if (st[b] && !prev[b]) { press(pi, b, 4); I.lastDevice = 'pad'; } if (!st[b] && prev[b]) release(pi, b, 4); }
-      const menu = { up: st.u, down: st.d, left: st.l, right: st.r, ok: B(0) || B(9), back: B(1), pause: B(9) };
+      // menus read the stick by its main direction with a light push, so a rough flick or a roll counts
+      const mx = Math.abs(ax) > Math.abs(ay) && Math.abs(ax) > 0.35, my = Math.abs(ay) >= Math.abs(ax) && Math.abs(ay) > 0.35;
+      const menu = { up: B(12) || (my && ay < 0), down: B(13) || (my && ay > 0), left: B(14) || (mx && ax < 0), right: B(15) || (mx && ax > 0), ok: B(0) || B(9), back: B(1), pause: B(9) };
       const pm = prev.menu || {};
       for (const k in menu) if (menu[k] && !pm[k]) I.menu.push({ m: k === 'ok' && B(9) && !B(0) ? 'pause' : k });
       st.menu = menu; gpPrev[gp.index] = st;
@@ -91,7 +93,7 @@ const Input = (() => {
   };
   function bindSet(root, pi, padSel, knobSel, pSel, spSel) {
     const pad = root.querySelector(padSel), knob = root.querySelector(knobSel);
-    let pid = null, cur = '';
+    let pid = null, cur = '', mdir = '';
     const setDir = (dir) => {
       for (const b of ['l', 'r', 'u', 'd']) if (dir.includes(b) && !cur.includes(b)) press(pi, b, 2);
       for (const b of ['l', 'r', 'u', 'd']) if (!dir.includes(b) && cur.includes(b)) release(pi, b, 2);
@@ -101,6 +103,9 @@ const Input = (() => {
       const r = pad.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
       const dx = e.clientX - cx, dy = e.clientY - cy, d = Math.hypot(dx, dy), rad = r.width / 2;
       const k = Math.min(1, d / rad); knob.style.transform = `translate(${dx / d * k * rad * 0.45 || 0}px,${dy / d * k * rad * 0.45 || 0}px)`;
+      // the menus get a direction whenever the knob's main direction changes, even mid-roll (forgiving for codes)
+      if (d >= rad * 0.12) { const m = Math.abs(dx) > Math.abs(dy) * (mdir === 'up' || mdir === 'down' ? 1.25 : 0.8) ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up'); if (m !== mdir) { mdir = m; I.menu.push({ m }); } }
+      else mdir = '';
       if (d < rad * 0.22) return setDir('');
       const a = Math.atan2(dy, dx) * 180 / Math.PI; let dir = '';
       if (I.fourWay) dir = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'r' : 'l') : (dy > 0 ? 'd' : 'u');
@@ -110,15 +115,10 @@ const Input = (() => {
       }
       setDir(dir);
     };
-    pad.addEventListener('pointerdown', e => { e.preventDefault(); I.touch = true; pid = e.pointerId; pad.setPointerCapture(pid); move(e); padMenu(e); });
+    pad.addEventListener('pointerdown', e => { e.preventDefault(); I.touch = true; pid = e.pointerId; pad.setPointerCapture(pid); mdir = ''; move(e); });
     pad.addEventListener('pointermove', e => { if (e.pointerId === pid) move(e); });
-    const end = e => { if (e.pointerId !== pid) return; pid = null; setDir(''); knob.style.transform = ''; };
+    const end = e => { if (e.pointerId !== pid) return; pid = null; mdir = ''; setDir(''); knob.style.transform = ''; };
     pad.addEventListener('pointerup', end); pad.addEventListener('pointercancel', end);
-    function padMenu(e) {
-      const r = pad.getBoundingClientRect(), dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2);
-      if (Math.hypot(dx, dy) < r.width * 0.11) return;
-      I.menu.push({ m: Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up') });
-    }
     for (const [sel, b] of [[pSel, 'p'], [spSel, 'sp']]) {
       const el = root.querySelector(sel);
       el.addEventListener('pointerdown', e => { e.preventDefault(); I.touch = true; el.classList.add('on'); press(pi, b, 2); if (b === 'p') I.menu.push({ m: 'ok', touch: true }); });

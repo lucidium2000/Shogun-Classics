@@ -1773,7 +1773,9 @@ const Input = (() => {
       const st = { l: B(14) || ax < -0.5, r: B(15) || ax > 0.5, u: B(12) || ay < -0.5, d: B(13) || ay > 0.5, p: B(0) || B(2), sp: B(1) || B(3) };
       const prev = gpPrev[gp.index] || {};
       for (const b in st) { if (st[b] && !prev[b]) { press(pi, b, 4); I.lastDevice = 'pad'; } if (!st[b] && prev[b]) release(pi, b, 4); }
-      const menu = { up: st.u, down: st.d, left: st.l, right: st.r, ok: B(0) || B(9), back: B(1), pause: B(9) };
+      // menus read the stick by its main direction with a light push, so a rough flick or a roll counts
+      const mx = Math.abs(ax) > Math.abs(ay) && Math.abs(ax) > 0.35, my = Math.abs(ay) >= Math.abs(ax) && Math.abs(ay) > 0.35;
+      const menu = { up: B(12) || (my && ay < 0), down: B(13) || (my && ay > 0), left: B(14) || (mx && ax < 0), right: B(15) || (mx && ax > 0), ok: B(0) || B(9), back: B(1), pause: B(9) };
       const pm = prev.menu || {};
       for (const k in menu) if (menu[k] && !pm[k]) I.menu.push({ m: k === 'ok' && B(9) && !B(0) ? 'pause' : k });
       st.menu = menu; gpPrev[gp.index] = st;
@@ -1788,7 +1790,7 @@ const Input = (() => {
   };
   function bindSet(root, pi, padSel, knobSel, pSel, spSel) {
     const pad = root.querySelector(padSel), knob = root.querySelector(knobSel);
-    let pid = null, cur = '';
+    let pid = null, cur = '', mdir = '';
     const setDir = (dir) => {
       for (const b of ['l', 'r', 'u', 'd']) if (dir.includes(b) && !cur.includes(b)) press(pi, b, 2);
       for (const b of ['l', 'r', 'u', 'd']) if (!dir.includes(b) && cur.includes(b)) release(pi, b, 2);
@@ -1798,6 +1800,9 @@ const Input = (() => {
       const r = pad.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
       const dx = e.clientX - cx, dy = e.clientY - cy, d = Math.hypot(dx, dy), rad = r.width / 2;
       const k = Math.min(1, d / rad); knob.style.transform = `translate(${dx / d * k * rad * 0.45 || 0}px,${dy / d * k * rad * 0.45 || 0}px)`;
+      // the menus get a direction whenever the knob's main direction changes, even mid-roll (forgiving for codes)
+      if (d >= rad * 0.12) { const m = Math.abs(dx) > Math.abs(dy) * (mdir === 'up' || mdir === 'down' ? 1.25 : 0.8) ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up'); if (m !== mdir) { mdir = m; I.menu.push({ m }); } }
+      else mdir = '';
       if (d < rad * 0.22) return setDir('');
       const a = Math.atan2(dy, dx) * 180 / Math.PI; let dir = '';
       if (I.fourWay) dir = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'r' : 'l') : (dy > 0 ? 'd' : 'u');
@@ -1807,15 +1812,10 @@ const Input = (() => {
       }
       setDir(dir);
     };
-    pad.addEventListener('pointerdown', e => { e.preventDefault(); I.touch = true; pid = e.pointerId; pad.setPointerCapture(pid); move(e); padMenu(e); });
+    pad.addEventListener('pointerdown', e => { e.preventDefault(); I.touch = true; pid = e.pointerId; pad.setPointerCapture(pid); mdir = ''; move(e); });
     pad.addEventListener('pointermove', e => { if (e.pointerId === pid) move(e); });
-    const end = e => { if (e.pointerId !== pid) return; pid = null; setDir(''); knob.style.transform = ''; };
+    const end = e => { if (e.pointerId !== pid) return; pid = null; mdir = ''; setDir(''); knob.style.transform = ''; };
     pad.addEventListener('pointerup', end); pad.addEventListener('pointercancel', end);
-    function padMenu(e) {
-      const r = pad.getBoundingClientRect(), dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2);
-      if (Math.hypot(dx, dy) < r.width * 0.11) return;
-      I.menu.push({ m: Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up') });
-    }
     for (const [sel, b] of [[pSel, 'p'], [spSel, 'sp']]) {
       const el = root.querySelector(sel);
       el.addEventListener('pointerdown', e => { e.preventDefault(); I.touch = true; el.classList.add('on'); press(pi, b, 2); if (b === 'p') I.menu.push({ m: 'ok', touch: true }); });
@@ -2271,28 +2271,45 @@ const Title = {
       ['OPTIONS', () => go(Options, Title)],
       ['ALL GAMES', toMenu]];
   },
+  // the old code: up, up, down, down, left, right. Read very forgivingly (Chris, 2026-10-31): a repeated push
+  // only has to be made once, so a stick rolled up, down, left, right works, and stray pushes don't count against you.
+  codeStep(d) {
+    const SEQ = ['up', 'up', 'down', 'down', 'left', 'right'];
+    let n = this.codeN || 0;
+    if (this.codeShow <= 0) n = 0;   // a pause of a few seconds starts it over
+    if (d === SEQ[n]) n++;
+    else if (n > 0 && SEQ[n] === SEQ[n - 1] && d === SEQ[n + 1]) n += 2;   // skipped the doubled push
+    else if (n > 0 && d === SEQ[n - 1]) return;   // the same push again: ignore it
+    else if (this.stage === 2) return;   // at the code prompt a stray push is simply ignored
+    else { n = d === 'up' ? 1 : 0; if (!n) { this.codeN = 0; return; } }   // on the menus a wrong way starts over
+    this.codeN = n; this.codeShow = this.stage === 2 ? 99 : 3; Audio.sfx('code', n);
+    if (n >= 6) this.codeDone(true);
+  },
+  codeDone(on) {
+    this.codeN = 0; this.codeShow = 0; FX.gore = on; store.set('blood96', on); if (on) store.set('bloodcode', true);
+    this.codeT = 0.001; Audio.sfx(on ? 'blood' : 'ui'); if (on) { Audio.sfx('taiko'); Audio.clip('kaishaku', 'Kye-shah-koo!', 0.75, 0.05); }
+    if (this.stage !== 1) { this.stage = 3; this.stageT = 0; }   // after the answer shows, on to the main menu
+  },
+  first() {
+    return [['START', () => { FX.gore = false; store.set('blood96', false); this.stage = 1; this.sel = 0; Audio.sfx('taiko'); }],
+      ['MATURE VERSION', () => { this.stage = 2; this.codeN = 0; this.codeShow = 99; this.codeWait = 12; Audio.sfx('ui'); }]];
+  },
   update(dt, evs) {
     this.t += dt;
-    // the old code: up, up, down, down, left, right turns the blood on (and off again)
+    if (this.codeT) this.codeT += dt;
+    if (this.codeShow > 0 && this.stage !== 2) this.codeShow -= dt;
     for (const e of evs) {
       const d = e.m === 'swipe' ? e.d : e.m;
-      if (!['up', 'down', 'left', 'right'].includes(d)) continue;
-      this.code = ((this.code || []).concat(d)).slice(-6);
-      // how far along the code the last presses are; each step lights up like a fatality code
-      const SEQ = ['up', 'up', 'down', 'down', 'left', 'right'];
-      let n = this.code.length; while (n > 0 && this.code.slice(-n).join() !== SEQ.slice(0, n).join()) n--;
-      if (n) { this.codeN = n; this.codeShow = 1.6; Audio.sfx('code', n); } else this.codeN = 0;
-      if (n === 6) {
-        this.code = []; this.codeN = 0; this.codeShow = 0; FX.gore = !FX.gore; store.set('blood96', FX.gore); store.set('bloodcode', true);
-        this.codeT = 0.001; Audio.sfx(FX.gore ? 'blood' : 'ui'); if (FX.gore) { Audio.sfx('taiko'); Audio.clip('kaishaku', 'Kye-shah-koo!', 0.75, 0.05); }
-      }
+      if (['up', 'down', 'left', 'right'].includes(d) && this.stage !== 3) this.codeStep(d);
     }
-    if (this.codeT) this.codeT += dt;
-    if (this.codeShow > 0) this.codeShow -= dt;
-    if (this.stage === 0) {
-      if (evs.some(e => e.m === 'ok' || e.m === 'tap')) { this.stage = 1; Audio.sfx('taiko'); }
+    if (this.stage === 3) { this.stageT += dt; if (this.stageT > 1.6) { this.stage = 1; this.sel = 0; } return; }
+    if (this.stage === 2) {
+      // the mature version asks for the code; back, or running out of time, returns to the start choice
+      this.codeWait -= dt;
+      if (this.codeWait <= 0 || evs.some(e => e.m === 'back' || e.m === 'pause')) { this.stage = 0; this.codeN = 0; this.codeShow = 0; Audio.sfx('ui'); }
       return;
     }
+    if (this.stage === 0) { const f = this.first(); this.sel = menuNav(f, this.sel, evs.filter(e => e.m !== 'up' && e.m !== 'down'), i => f[i][1]()); return; }
     for (const e of evs) if (e.m === 'char' && (e.k === '1' || e.k === '2')) return this.items()[+e.k - 1][1]();
     const it = this.items(); this.sel = menuNav(it, this.sel, evs, i => it[i][1]());
   },
@@ -2310,8 +2327,23 @@ const Title = {
     text('REMASTERED', W / 2 + 250, 72 + 7.4 * cell, 20, '#c9a24b', { spacing: 6 });
     hits = [];
     if (this.stage === 0) {
-      if (Math.sin(t * 4) > -0.2) text(isTouch() ? 'TAP PUNCH TO BEGIN' : 'PRESS (ENTER) TO BEGIN', W / 2, 410, 30, '#55ffff', { font: FONT.dos, weight: 400 });
-      hits.push({ x: 0, y: 0, w: W, h: H, on: () => {} });
+      const f = this.first();
+      f.forEach(([l, on], i) => button(l, W / 2 + (i - 0.5) * 290, 412, 260, 52, on, i === this.sel));
+      text('no blood', W / 2 - 145, 452, 14, '#8c8070', { spacing: 2 });
+    } else if (this.stage === 2 || this.stage === 3) {
+      // the code prompt, in the fatality code's style: each push lights an arrow
+      const n = this.codeN || 0;
+      ctx.save(); ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(W / 2 - 220, 360, 440, 112);
+      ctx.strokeStyle = '#a3201d'; ctx.lineWidth = 2; ctx.strokeRect(W / 2 - 220, 360, 440, 112);
+      if (this.stage === 2) { ctx.fillStyle = '#a3201d'; ctx.fillRect(W / 2 - 218, 466, 436 * Math.max(0, this.codeWait / 12), 4); }
+      ctx.restore();
+      if (this.stage === 3) text(FX.gore ? 'BLOOD CODE ACCEPTED' : 'BLOOD OFF', W / 2, 414, 32, FX.gore ? '#ff2a1f' : '#8c8070', { font: FONT.dos, weight: 400, glow: FX.gore ? '#800' : undefined });
+      else {
+        text('ENTER THE CODE', W / 2, 382, 18, '#c9b9a0', { spacing: 3 });
+        text(codeArrows('882246'.slice(0, n), 1) + ' _'.repeat(6 - n), W / 2, 420, 38, '#ffffff', { font: FONT.dos, weight: 400 });
+        text(isTouch() ? 'USE THE STICK, OR SWIPE THE SCREEN' : 'ARROWS, STICK OR WASD · ESC TO GO BACK', W / 2, 452, 13, '#8c8070', { spacing: 1 });
+        button('BACK', W / 2 + 290, 416, 100, 44, () => { this.stage = 0; this.codeN = 0; this.codeShow = 0; Audio.sfx('ui'); }, false);
+      }
     } else {
       text('(1) OR (2) PLAYERS', W / 2, 372, 22, '#55ffff', { font: FONT.dos, weight: 400 });
       const it = this.items(), gap = Math.min(193, (W - 40) / it.length);
@@ -2321,22 +2353,15 @@ const Title = {
     // a quiet nod for anyone who grew up on the old code; it means nothing to anyone else
     if (FX.gore) text('BLOOD CODE ON', W / 2, 492, 13, '#7a1412', { font: FONT.dos, weight: 400, spacing: 2 });
     else text('THE OLD CODE STILL WORKS  ·  30 LIVES NOT INCLUDED', W / 2, 492, 13, '#3a5656', { font: FONT.dos, weight: 400, spacing: 1 });
-    // the code box, in the fatality code's style: each press lights an arrow, then it answers
-    const done = this.codeT && this.codeT < 2.2;
-    if (done || (this.codeShow > 0 && this.codeN)) {
-      const k = done ? (this.codeT < 0.15 ? this.codeT / 0.15 : Math.min(1, (2.2 - this.codeT) / 0.5)) : Math.min(1, this.codeShow / 0.3);
-      if (done && FX.gore) { ctx.fillStyle = `rgba(150,0,0,${0.35 * Math.max(0, 1 - this.codeT * 2)})`; ctx.fillRect(0, 0, W, H); }
-      ctx.save(); ctx.globalAlpha = k;
+    // typed on the menus too: the same box, briefly, above the buttons
+    if (this.stage < 2 && this.codeShow > 0 && this.codeN) {
+      ctx.save(); ctx.globalAlpha = Math.min(1, this.codeShow / 0.3);
       ctx.fillStyle = 'rgba(0,0,0,0.92)'; ctx.fillRect(W / 2 - 200, 262, 400, 74);
       ctx.strokeStyle = '#a3201d'; ctx.lineWidth = 2; ctx.strokeRect(W / 2 - 200, 262, 400, 74);
-      if (done) text(FX.gore ? 'BLOOD CODE ACCEPTED' : 'BLOOD OFF', W / 2, 299, 30, FX.gore ? '#ff2a1f' : '#8c8070', { font: FONT.dos, weight: 400, glow: FX.gore ? '#800' : undefined });
-      else {
-        const arr = codeArrows('882246'.slice(0, this.codeN), 1), rest = ' _'.repeat(6 - this.codeN);
-        text(arr + rest, W / 2, 292, 36, '#ffffff', { font: FONT.dos, weight: 400 });
-        ctx.fillStyle = '#a3201d'; ctx.fillRect(W / 2 - 198, 330, 396 * this.codeN / 6, 4);
-      }
+      text(codeArrows('882246'.slice(0, this.codeN), 1) + ' _'.repeat(6 - this.codeN), W / 2, 299, 36, '#ffffff', { font: FONT.dos, weight: 400 });
       ctx.restore();
     }
+    if (this.codeT && this.codeT < 0.6 && FX.gore) { ctx.fillStyle = `rgba(150,0,0,${0.35 * (1 - this.codeT / 0.6)})`; ctx.fillRect(0, 0, W, H); }
   },
 };
 

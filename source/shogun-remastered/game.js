@@ -173,28 +173,45 @@ const Title = {
       ['OPTIONS', () => go(Options, Title)],
       ['ALL GAMES', toMenu]];
   },
+  // the old code: up, up, down, down, left, right. Read very forgivingly (Chris, 2026-10-31): a repeated push
+  // only has to be made once, so a stick rolled up, down, left, right works, and stray pushes don't count against you.
+  codeStep(d) {
+    const SEQ = ['up', 'up', 'down', 'down', 'left', 'right'];
+    let n = this.codeN || 0;
+    if (this.codeShow <= 0) n = 0;   // a pause of a few seconds starts it over
+    if (d === SEQ[n]) n++;
+    else if (n > 0 && SEQ[n] === SEQ[n - 1] && d === SEQ[n + 1]) n += 2;   // skipped the doubled push
+    else if (n > 0 && d === SEQ[n - 1]) return;   // the same push again: ignore it
+    else if (this.stage === 2) return;   // at the code prompt a stray push is simply ignored
+    else { n = d === 'up' ? 1 : 0; if (!n) { this.codeN = 0; return; } }   // on the menus a wrong way starts over
+    this.codeN = n; this.codeShow = this.stage === 2 ? 99 : 3; Audio.sfx('code', n);
+    if (n >= 6) this.codeDone(true);
+  },
+  codeDone(on) {
+    this.codeN = 0; this.codeShow = 0; FX.gore = on; store.set('blood96', on); if (on) store.set('bloodcode', true);
+    this.codeT = 0.001; Audio.sfx(on ? 'blood' : 'ui'); if (on) { Audio.sfx('taiko'); Audio.clip('kaishaku', 'Kye-shah-koo!', 0.75, 0.05); }
+    if (this.stage !== 1) { this.stage = 3; this.stageT = 0; }   // after the answer shows, on to the main menu
+  },
+  first() {
+    return [['START', () => { FX.gore = false; store.set('blood96', false); this.stage = 1; this.sel = 0; Audio.sfx('taiko'); }],
+      ['MATURE VERSION', () => { this.stage = 2; this.codeN = 0; this.codeShow = 99; this.codeWait = 12; Audio.sfx('ui'); }]];
+  },
   update(dt, evs) {
     this.t += dt;
-    // the old code: up, up, down, down, left, right turns the blood on (and off again)
+    if (this.codeT) this.codeT += dt;
+    if (this.codeShow > 0 && this.stage !== 2) this.codeShow -= dt;
     for (const e of evs) {
       const d = e.m === 'swipe' ? e.d : e.m;
-      if (!['up', 'down', 'left', 'right'].includes(d)) continue;
-      this.code = ((this.code || []).concat(d)).slice(-6);
-      // how far along the code the last presses are; each step lights up like a fatality code
-      const SEQ = ['up', 'up', 'down', 'down', 'left', 'right'];
-      let n = this.code.length; while (n > 0 && this.code.slice(-n).join() !== SEQ.slice(0, n).join()) n--;
-      if (n) { this.codeN = n; this.codeShow = 1.6; Audio.sfx('code', n); } else this.codeN = 0;
-      if (n === 6) {
-        this.code = []; this.codeN = 0; this.codeShow = 0; FX.gore = !FX.gore; store.set('blood96', FX.gore); store.set('bloodcode', true);
-        this.codeT = 0.001; Audio.sfx(FX.gore ? 'blood' : 'ui'); if (FX.gore) { Audio.sfx('taiko'); Audio.clip('kaishaku', 'Kye-shah-koo!', 0.75, 0.05); }
-      }
+      if (['up', 'down', 'left', 'right'].includes(d) && this.stage !== 3) this.codeStep(d);
     }
-    if (this.codeT) this.codeT += dt;
-    if (this.codeShow > 0) this.codeShow -= dt;
-    if (this.stage === 0) {
-      if (evs.some(e => e.m === 'ok' || e.m === 'tap')) { this.stage = 1; Audio.sfx('taiko'); }
+    if (this.stage === 3) { this.stageT += dt; if (this.stageT > 1.6) { this.stage = 1; this.sel = 0; } return; }
+    if (this.stage === 2) {
+      // the mature version asks for the code; back, or running out of time, returns to the start choice
+      this.codeWait -= dt;
+      if (this.codeWait <= 0 || evs.some(e => e.m === 'back' || e.m === 'pause')) { this.stage = 0; this.codeN = 0; this.codeShow = 0; Audio.sfx('ui'); }
       return;
     }
+    if (this.stage === 0) { const f = this.first(); this.sel = menuNav(f, this.sel, evs.filter(e => e.m !== 'up' && e.m !== 'down'), i => f[i][1]()); return; }
     for (const e of evs) if (e.m === 'char' && (e.k === '1' || e.k === '2')) return this.items()[+e.k - 1][1]();
     const it = this.items(); this.sel = menuNav(it, this.sel, evs, i => it[i][1]());
   },
@@ -212,8 +229,23 @@ const Title = {
     text('REMASTERED', W / 2 + 250, 72 + 7.4 * cell, 20, '#c9a24b', { spacing: 6 });
     hits = [];
     if (this.stage === 0) {
-      if (Math.sin(t * 4) > -0.2) text(isTouch() ? 'TAP PUNCH TO BEGIN' : 'PRESS (ENTER) TO BEGIN', W / 2, 410, 30, '#55ffff', { font: FONT.dos, weight: 400 });
-      hits.push({ x: 0, y: 0, w: W, h: H, on: () => {} });
+      const f = this.first();
+      f.forEach(([l, on], i) => button(l, W / 2 + (i - 0.5) * 290, 412, 260, 52, on, i === this.sel));
+      text('no blood', W / 2 - 145, 452, 14, '#8c8070', { spacing: 2 });
+    } else if (this.stage === 2 || this.stage === 3) {
+      // the code prompt, in the fatality code's style: each push lights an arrow
+      const n = this.codeN || 0;
+      ctx.save(); ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(W / 2 - 220, 360, 440, 112);
+      ctx.strokeStyle = '#a3201d'; ctx.lineWidth = 2; ctx.strokeRect(W / 2 - 220, 360, 440, 112);
+      if (this.stage === 2) { ctx.fillStyle = '#a3201d'; ctx.fillRect(W / 2 - 218, 466, 436 * Math.max(0, this.codeWait / 12), 4); }
+      ctx.restore();
+      if (this.stage === 3) text(FX.gore ? 'BLOOD CODE ACCEPTED' : 'BLOOD OFF', W / 2, 414, 32, FX.gore ? '#ff2a1f' : '#8c8070', { font: FONT.dos, weight: 400, glow: FX.gore ? '#800' : undefined });
+      else {
+        text('ENTER THE CODE', W / 2, 382, 18, '#c9b9a0', { spacing: 3 });
+        text(codeArrows('882246'.slice(0, n), 1) + ' _'.repeat(6 - n), W / 2, 420, 38, '#ffffff', { font: FONT.dos, weight: 400 });
+        text(isTouch() ? 'USE THE STICK, OR SWIPE THE SCREEN' : 'ARROWS, STICK OR WASD · ESC TO GO BACK', W / 2, 452, 13, '#8c8070', { spacing: 1 });
+        button('BACK', W / 2 + 290, 416, 100, 44, () => { this.stage = 0; this.codeN = 0; this.codeShow = 0; Audio.sfx('ui'); }, false);
+      }
     } else {
       text('(1) OR (2) PLAYERS', W / 2, 372, 22, '#55ffff', { font: FONT.dos, weight: 400 });
       const it = this.items(), gap = Math.min(193, (W - 40) / it.length);
@@ -223,22 +255,15 @@ const Title = {
     // a quiet nod for anyone who grew up on the old code; it means nothing to anyone else
     if (FX.gore) text('BLOOD CODE ON', W / 2, 492, 13, '#7a1412', { font: FONT.dos, weight: 400, spacing: 2 });
     else text('THE OLD CODE STILL WORKS  ·  30 LIVES NOT INCLUDED', W / 2, 492, 13, '#3a5656', { font: FONT.dos, weight: 400, spacing: 1 });
-    // the code box, in the fatality code's style: each press lights an arrow, then it answers
-    const done = this.codeT && this.codeT < 2.2;
-    if (done || (this.codeShow > 0 && this.codeN)) {
-      const k = done ? (this.codeT < 0.15 ? this.codeT / 0.15 : Math.min(1, (2.2 - this.codeT) / 0.5)) : Math.min(1, this.codeShow / 0.3);
-      if (done && FX.gore) { ctx.fillStyle = `rgba(150,0,0,${0.35 * Math.max(0, 1 - this.codeT * 2)})`; ctx.fillRect(0, 0, W, H); }
-      ctx.save(); ctx.globalAlpha = k;
+    // typed on the menus too: the same box, briefly, above the buttons
+    if (this.stage < 2 && this.codeShow > 0 && this.codeN) {
+      ctx.save(); ctx.globalAlpha = Math.min(1, this.codeShow / 0.3);
       ctx.fillStyle = 'rgba(0,0,0,0.92)'; ctx.fillRect(W / 2 - 200, 262, 400, 74);
       ctx.strokeStyle = '#a3201d'; ctx.lineWidth = 2; ctx.strokeRect(W / 2 - 200, 262, 400, 74);
-      if (done) text(FX.gore ? 'BLOOD CODE ACCEPTED' : 'BLOOD OFF', W / 2, 299, 30, FX.gore ? '#ff2a1f' : '#8c8070', { font: FONT.dos, weight: 400, glow: FX.gore ? '#800' : undefined });
-      else {
-        const arr = codeArrows('882246'.slice(0, this.codeN), 1), rest = ' _'.repeat(6 - this.codeN);
-        text(arr + rest, W / 2, 292, 36, '#ffffff', { font: FONT.dos, weight: 400 });
-        ctx.fillStyle = '#a3201d'; ctx.fillRect(W / 2 - 198, 330, 396 * this.codeN / 6, 4);
-      }
+      text(codeArrows('882246'.slice(0, this.codeN), 1) + ' _'.repeat(6 - this.codeN), W / 2, 299, 36, '#ffffff', { font: FONT.dos, weight: 400 });
       ctx.restore();
     }
+    if (this.codeT && this.codeT < 0.6 && FX.gore) { ctx.fillStyle = `rgba(150,0,0,${0.35 * (1 - this.codeT / 0.6)})`; ctx.fillRect(0, 0, W, H); }
   },
 };
 
