@@ -2339,7 +2339,7 @@ const Title = {
       ctx.restore();
       if (this.stage === 3) text(FX.gore ? 'BLOOD CODE ACCEPTED' : 'BLOOD OFF', W / 2, 414, 32, FX.gore ? '#ff2a1f' : '#8c8070', { font: FONT.dos, weight: 400, glow: FX.gore ? '#800' : undefined });
       else {
-        text('ENTER THE CODE (CONTRA CODE)', W / 2, 382, 18, '#c9b9a0', { spacing: 3 });
+        text('ENTER THE CODE', W / 2 - 4, 382, 18, '#c9b9a0', { spacing: 3, align: 'right' }); text('(CONTRA CODE)', W / 2 + 6, 382, 19, '#ffd23f', { spacing: 3, align: 'left', glow: '#c06a00' });
         text(codeArrows('882246'.slice(0, n), 1) + ' _'.repeat(6 - n), W / 2, 420, 38, '#ffffff', { font: FONT.dos, weight: 400 });
         text(isTouch() ? 'USE THE STICK, OR SWIPE THE SCREEN' : 'ARROWS, STICK OR WASD · ESC TO GO BACK', W / 2, 452, 13, '#8c8070', { spacing: 1 });
         button('BACK', W / 2 + 290, 416, 100, 44, () => { this.stage = 0; this.codeN = 0; this.codeShow = 0; Audio.sfx('ui'); }, false);
